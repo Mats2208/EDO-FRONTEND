@@ -339,9 +339,248 @@ export default function RK4Method() {
 
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mt-4">
             <p className="text-sm text-purple-900">
-              <strong>💡 En la práctica:</strong> RK4 te permite usar un h mucho mayor que Euler 
-              para obtener la misma precisión, lo que resulta en menos pasos totales y, 
+              <strong>💡 En la práctica:</strong> RK4 te permite usar un h mucho mayor que Euler
+              para obtener la misma precisión, lo que resulta en menos pasos totales y,
               frecuentemente, menor costo computacional total.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Derivación intuitiva */}
+      <Card title="¿De Dónde Vienen Estas Fórmulas?">
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            RK4 se deriva buscando coincidir con la <strong>expansión de Taylor</strong> hasta el término de orden <MathFormula>{`h^4`}</MathFormula>:
+          </p>
+
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+            <h4 className="font-semibold text-blue-900 mb-2">Serie de Taylor</h4>
+            <MathFormula block>{`y(t + h) = y(t) + hy'(t) + \\frac{h^2}{2}y''(t) + \\frac{h^3}{6}y'''(t) + \\frac{h^4}{24}y^{(4)}(t) + O(h^5)`}</MathFormula>
+          </div>
+
+          <p className="text-gray-700">
+            RK4 combina las 4 evaluaciones de <MathFormula>{`f`}</MathFormula> para aproximar esta serie
+            hasta el término <MathFormula>{`h^4`}</MathFormula> sin necesitar calcular derivadas de orden superior.
+          </p>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-sm text-yellow-900">
+              <strong>✨ Magia matemática:</strong> Los coeficientes <MathFormula>{`\\frac{1}{6}(1, 2, 2, 1)`}</MathFormula> y
+              las posiciones donde se evalúan los <MathFormula>{`k_i`}</MathFormula> están cuidadosamente
+              elegidos para que el error de truncamiento sea exactamente <MathFormula>{`O(h^5)`}</MathFormula>.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Familia Runge-Kutta */}
+      <Card title="La Familia Runge-Kutta">
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            RK4 pertenece a una familia completa de métodos Runge-Kutta de diferentes órdenes:
+          </p>
+
+          <div className="space-y-3">
+            <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-gray-600 text-white font-bold px-3 py-1 rounded text-sm flex-shrink-0">RK1</div>
+                <div className="flex-1">
+                  <h5 className="font-semibold text-gray-900 mb-1">Método de Euler</h5>
+                  <p className="text-sm text-gray-700">1 evaluación, orden 1</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-green-50 border border-green-300 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-green-600 text-white font-bold px-3 py-1 rounded text-sm flex-shrink-0">RK2</div>
+                <div className="flex-1">
+                  <h5 className="font-semibold text-green-900 mb-1">Euler Mejorado / Método del Punto Medio</h5>
+                  <p className="text-sm text-green-800">2 evaluaciones, orden 2</p>
+                  <div className="text-xs text-green-700 mt-1">
+                    Ejemplo: método de Heun, punto medio
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-yellow-600 text-white font-bold px-3 py-1 rounded text-sm flex-shrink-0">RK3</div>
+                <div className="flex-1">
+                  <h5 className="font-semibold text-yellow-900 mb-1">Runge-Kutta de 3er Orden</h5>
+                  <p className="text-sm text-yellow-800">3 evaluaciones, orden 3</p>
+                  <div className="text-xs text-yellow-700 mt-1">
+                    Menos común, RK4 es más popular
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-300 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-blue-600 text-white font-bold px-3 py-1 rounded text-sm flex-shrink-0">RK4</div>
+                <div className="flex-1">
+                  <h5 className="font-semibold text-blue-900 mb-1">Runge-Kutta Clásico de 4º Orden ⭐</h5>
+                  <p className="text-sm text-blue-800">4 evaluaciones, orden 4</p>
+                  <div className="text-xs text-blue-700 mt-1">
+                    El más popular: balance óptimo precisión/costo
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-purple-50 border border-purple-300 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-purple-600 text-white font-bold px-3 py-1 rounded text-sm flex-shrink-0">RK45</div>
+                <div className="flex-1">
+                  <h5 className="font-semibold text-purple-900 mb-1">Métodos Adaptativos (Dormand-Prince, Fehlberg)</h5>
+                  <p className="text-sm text-purple-800">6+ evaluaciones, ajusta h automáticamente</p>
+                  <div className="text-xs text-purple-700 mt-1">
+                    Usados en MATLAB, SciPy: ode45, solve_ivp
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Aplicaciones del mundo real */}
+      <Card title="Aplicaciones del Mundo Real">
+        <div className="space-y-4">
+          <p className="text-gray-700 mb-4">
+            RK4 es el caballo de batalla de la simulación numérica en ciencia e ingeniería:
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+              <h5 className="font-semibold text-blue-900 mb-2">🚀 Ingeniería Aeroespacial</h5>
+              <p className="text-sm text-blue-800">
+                Cálculo de trayectorias orbitales, control de actitud de satélites, reentrada atmosférica.
+                La precisión de RK4 es crítica para misiones espaciales.
+              </p>
+            </div>
+
+            <div className="bg-green-50 border-l-4 border-green-500 p-4">
+              <h5 className="font-semibold text-green-900 mb-2">⚙️ Mecánica y Robótica</h5>
+              <p className="text-sm text-green-800">
+                Simulación de sistemas mecánicos, cinemática de robots, dinámica de vehículos.
+                Permite simulaciones en tiempo real.
+              </p>
+            </div>
+
+            <div className="bg-purple-50 border-l-4 border-purple-500 p-4">
+              <h5 className="font-semibold text-purple-900 mb-2">⚡ Circuitos Eléctricos</h5>
+              <p className="text-sm text-purple-800">
+                Análisis de circuitos RLC, transitorios eléctricos, diseño de filtros.
+                Fundamental en SPICE y simuladores de circuitos.
+              </p>
+            </div>
+
+            <div className="bg-red-50 border-l-4 border-red-500 p-4">
+              <h5 className="font-semibold text-red-900 mb-2">🧬 Biología y Medicina</h5>
+              <p className="text-sm text-red-800">
+                Modelos farmacocinéticos, dinámicas poblacionales, propagación de enfermedades (modelos SIR).
+                Esencial en predicciones epidemiológicas.
+              </p>
+            </div>
+
+            <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
+              <h5 className="font-semibold text-orange-900 mb-2">🎮 Física de Videojuegos</h5>
+              <p className="text-sm text-orange-800">
+                Simulación de física en tiempo real, movimiento de proyectiles, colisiones.
+                Balance entre precisión y rendimiento.
+              </p>
+            </div>
+
+            <div className="bg-cyan-50 border-l-4 border-cyan-500 p-4">
+              <h5 className="font-semibold text-cyan-900 mb-2">🌡️ Clima y Meteorología</h5>
+              <p className="text-sm text-cyan-800">
+                Modelos atmosféricos, predicción del tiempo, simulaciones oceanográficas.
+                Parte de sistemas más complejos de predicción.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Implementación */}
+      <Card title="Implementación en Pseudocódigo">
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Implementación del método RK4:
+          </p>
+
+          <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+            <pre>{`function rk4(f, t0, y0, tf, N):
+    h = (tf - t0) / N
+    t = t0
+    y = y0
+
+    results = [(t, y)]
+
+    for i = 1 to N:
+        k1 = f(t, y)
+        k2 = f(t + h/2, y + (h/2)*k1)
+        k3 = f(t + h/2, y + (h/2)*k2)
+        k4 = f(t + h, y + h*k3)
+
+        y = y + (h/6) * (k1 + 2*k2 + 2*k3 + k4)
+        t = t + h
+
+        results.append((t, y))
+
+    return results`}</pre>
+          </div>
+
+          <p className="text-sm text-gray-600">
+            Nota cómo cada k usa el resultado anterior para refinar la estimación.
+            Esta estructura en cascada es clave para la alta precisión de RK4.
+          </p>
+        </div>
+      </Card>
+
+      {/* Consejos prácticos */}
+      <Card title="Consejos Prácticos para Usar RK4">
+        <div className="space-y-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h4 className="font-semibold text-green-900 mb-3">✅ Mejores Prácticas:</h4>
+            <ul className="space-y-2 text-sm text-green-800 ml-4">
+              <li className="flex gap-2">
+                <span className="text-green-600">•</span>
+                <span>Empieza con un h moderado y reduce si es necesario</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-green-600">•</span>
+                <span>Verifica la convergencia probando con h/2 y comparando</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-green-600">•</span>
+                <span>Para problemas stiff, considera métodos implícitos</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-green-600">•</span>
+                <span>Si la precisión es crítica, usa métodos adaptativos (RK45)</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-semibold text-blue-900 mb-2">💡 Regla general para h:</h4>
+            <p className="text-sm text-blue-800">
+              Divide el intervalo en <strong>al menos 100 pasos</strong> para empezar.
+              Si necesitas más precisión, duplica el número de pasos (h → h/2) hasta que
+              los resultados no cambien significativamente.
+            </p>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-sm text-yellow-900">
+              <strong>⚠️ Advertencia:</strong> RK4 no es milagroso. Para problemas muy rígidos
+              (stiff problems) donde las soluciones tienen componentes que decaen muy rápido,
+              se necesitan métodos especializados como métodos implícitos o LSODA.
             </p>
           </div>
         </div>

@@ -265,17 +265,197 @@ export default function EulerMethod() {
             <h4 className="font-semibold text-gray-900 mb-2">Error Global (acumulado):</h4>
             <MathFormula block>{`E_{global} = O(h)`}</MathFormula>
             <p className="text-sm text-gray-600">
-              El error total después de N pasos es proporcional a <MathFormula>h</MathFormula>. 
+              El error total después de N pasos es proporcional a <MathFormula>h</MathFormula>.
               Si reduces h a la mitad, el error se reduce aproximadamente a la mitad.
             </p>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-900">
-              <strong>💡 Conclusión:</strong> Euler es de <strong>primer orden</strong>. Para mejorar 
+              <strong>💡 Conclusión:</strong> Euler es de <strong>primer orden</strong>. Para mejorar
               la precisión significativamente, necesitamos métodos de orden superior como RK4.
             </p>
           </div>
+        </div>
+      </Card>
+
+      {/* Interpretación Geométrica */}
+      <Card title="Interpretación Geométrica">
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            El método de Euler tiene una interpretación geométrica muy clara:
+          </p>
+
+          <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
+            <h4 className="font-semibold text-orange-900 mb-2">Aproximación por Rectas Tangentes</h4>
+            <p className="text-sm text-orange-800 mb-3">
+              En cada paso, Euler aproxima la curva solución con su <strong>recta tangente</strong>:
+            </p>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-orange-800 ml-4">
+              <li>Empezamos en <MathFormula>{`(t_0, y_0)`}</MathFormula></li>
+              <li>La pendiente en ese punto es <MathFormula>{`m = f(t_0, y_0)`}</MathFormula></li>
+              <li>Seguimos la recta tangente <MathFormula>{`y = y_0 + m(t - t_0)`}</MathFormula> hasta <MathFormula>{`t_1 = t_0 + h`}</MathFormula></li>
+              <li>Llegamos a <MathFormula>{`y_1 = y_0 + h \cdot m`}</MathFormula></li>
+              <li>Repetimos desde <MathFormula>{`(t_1, y_1)`}</MathFormula></li>
+            </ol>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h5 className="font-semibold text-green-900 mb-2">✓ Con h pequeño</h5>
+              <p className="text-sm text-green-800">
+                Las rectas tangentes siguen muy de cerca la curva real. Muchos pasos pequeños
+                dan una buena aproximación.
+              </p>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <h5 className="font-semibold text-red-900 mb-2">✗ Con h grande</h5>
+              <p className="text-sm text-red-800">
+                Las rectas tangentes se desvían rápidamente de la curva real. El error
+                crece significativamente.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Estabilidad */}
+      <Card title="Estabilidad Numérica">
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Un aspecto crítico en métodos numéricos es la <strong>estabilidad</strong>:
+          </p>
+
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <h4 className="font-semibold text-purple-900 mb-2">¿Qué es la estabilidad?</h4>
+            <p className="text-sm text-purple-800">
+              Un método es estable si pequeños errores (de redondeo, por ejemplo) no crecen
+              descontroladamente durante el cálculo.
+            </p>
+          </div>
+
+          <div>
+            <h5 className="font-semibold text-gray-900 mb-2">Ejemplo: Ecuación de Prueba</h5>
+            <p className="text-sm text-gray-700 mb-2">
+              Consideremos <MathFormula>{`\\frac{dy}{dt} = \\lambda y`}</MathFormula> con <MathFormula>{`\\lambda < 0`}</MathFormula> (decaimiento):
+            </p>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-3">
+              <p className="text-sm text-yellow-900 mb-2">
+                <strong>Condición de estabilidad para Euler:</strong>
+              </p>
+              <MathFormula block>{`|1 + h\\lambda| \\leq 1`}</MathFormula>
+              <p className="text-sm text-yellow-800 mt-2">
+                Esto implica <MathFormula>{`h \\leq \\frac{2}{|\\lambda|}`}</MathFormula>
+              </p>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              Si h es demasiado grande, ¡el método puede volverse inestable y dar resultados
+              que oscilan o crecen cuando deberían decrecer!
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Variantes del Método de Euler */}
+      <Card title="Variantes del Método de Euler">
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Existen mejoras al método básico de Euler:
+          </p>
+
+          <div className="space-y-4">
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+              <h4 className="font-semibold text-blue-900 mb-2">Euler Mejorado (Heun's Method)</h4>
+              <div className="mb-3">
+                <MathFormula block>{`\\begin{align*}
+                  \\tilde{y}_{n+1} &= y_n + h \\cdot f(t_n, y_n) \\\\
+                  y_{n+1} &= y_n + \\frac{h}{2}[f(t_n, y_n) + f(t_{n+1}, \\tilde{y}_{n+1})]
+                \\end{align*}`}</MathFormula>
+              </div>
+              <p className="text-sm text-blue-800">
+                Usa un paso de Euler para predecir, luego corrige usando el promedio de pendientes.
+                Error de orden <MathFormula>{`O(h^2)`}</MathFormula>, mejor que Euler básico.
+              </p>
+            </div>
+
+            <div className="bg-green-50 border-l-4 border-green-500 p-4">
+              <h4 className="font-semibold text-green-900 mb-2">Euler Implícito (Backward Euler)</h4>
+              <div className="mb-3">
+                <MathFormula block>{`y_{n+1} = y_n + h \\cdot f(t_{n+1}, y_{n+1})`}</MathFormula>
+              </div>
+              <p className="text-sm text-green-800">
+                Usa la pendiente en el punto siguiente (requiere resolver ecuación implícita).
+                Más estable para problemas "stiff" (rígidos).
+              </p>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Aplicaciones Prácticas */}
+      <Card title="Cuándo Usar Euler">
+        <div className="space-y-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h4 className="font-semibold text-green-900 mb-2">✅ Casos apropiados:</h4>
+            <ul className="list-disc list-inside space-y-2 text-sm text-green-800 ml-4">
+              <li>Problemas educativos y demostrativos</li>
+              <li>Soluciones rápidas y aproximadas cuando la precisión no es crítica</li>
+              <li>Primera implementación para validar el problema</li>
+              <li>Cuando f(t,y) es muy costosa de evaluar</li>
+              <li>Intervalos muy pequeños donde h puede ser minúsculo</li>
+            </ul>
+          </div>
+
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h4 className="font-semibold text-red-900 mb-2">❌ Evitar Euler cuando:</h4>
+            <ul className="list-disc list-inside space-y-2 text-sm text-red-800 ml-4">
+              <li>Se requiere alta precisión</li>
+              <li>El intervalo de integración es grande</li>
+              <li>La solución cambia rápidamente (alta frecuencia)</li>
+              <li>El problema es "stiff" (múltiples escalas de tiempo)</li>
+              <li>En aplicaciones de producción o simulaciones críticas</li>
+            </ul>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-900">
+              <strong>💡 Recomendación:</strong> Usa Euler para entender conceptos, luego
+              migra a RK4 o métodos adaptativos para aplicaciones reales.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Implementación en código */}
+      <Card title="Implementación en Pseudocódigo">
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Implementación simple del método de Euler:
+          </p>
+
+          <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+            <pre>{`function euler(f, t0, y0, tf, N):
+    h = (tf - t0) / N
+    t = t0
+    y = y0
+
+    results = [(t, y)]
+
+    for i = 1 to N:
+        y = y + h * f(t, y)
+        t = t + h
+        results.append((t, y))
+
+    return results`}</pre>
+          </div>
+
+          <p className="text-sm text-gray-600">
+            Esta implementación es simple y directa, ideal para entender el método.
+            En la práctica se añaden verificaciones de error y optimizaciones.
+          </p>
         </div>
       </Card>
     </div>

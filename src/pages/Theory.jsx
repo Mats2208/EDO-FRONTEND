@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { BookOpen, Target, Rocket, Scale } from 'lucide-react'
+import { BookOpen, Target, Rocket, Scale, LineChart } from 'lucide-react'
 import WhatIsODE from '../components/theory/WhatIsODE'
 import EulerMethod from '../components/theory/EulerMethod'
 import RK4Method from '../components/theory/RK4Method'
 import Comparison from '../components/theory/Comparison'
+import InteractiveVisualization from '../components/theory/InteractiveVisualization'
 
 export default function Theory() {
   const [activeSection, setActiveSection] = useState('what-is-ode')
@@ -36,6 +37,13 @@ export default function Theory() {
       icon: Scale,
       color: 'purple',
       component: Comparison
+    },
+    {
+      id: 'visualization',
+      title: 'Visualización Interactiva',
+      icon: LineChart,
+      color: 'green',
+      component: InteractiveVisualization
     }
   ]
 
