@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { LineChart, PlayCircle, RotateCcw, TrendingUp, Zap, Compass, Info } from 'lucide-react'
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import Card from '../shared/Card'
 import MathFormula from '../shared/MathFormula'
 import SVGDirectionField from '../visualization/SVGDirectionField'
@@ -79,6 +80,68 @@ const EXAMPLES = {
 }
 
 // ============================================================================
+// COMPONENTE TOOLTIP PERSONALIZADO
+// ============================================================================
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload || payload.length === 0) return null
+
+  const data = payload[0].payload
+
+  return (
+    <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-3 text-xs">
+      <div className="font-bold text-gray-900 mb-2 border-b pb-1">
+        t = {label?.toFixed(4)}
+      </div>
+      <div className="space-y-1.5">
+        {data.exact !== undefined && (
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-0.5 bg-green-500 rounded"></span>
+              <span className="text-green-700 font-medium">Exacta:</span>
+            </span>
+            <span className="font-mono text-green-900">{data.exact.toFixed(6)}</span>
+          </div>
+        )}
+        {data.euler !== undefined && (
+          <>
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-0.5 bg-orange-500 rounded"></span>
+                <span className="text-orange-700 font-medium">Euler:</span>
+              </span>
+              <span className="font-mono text-orange-900">{data.euler.toFixed(6)}</span>
+            </div>
+            {data.eulerError !== undefined && (
+              <div className="flex items-center justify-between gap-3 ml-4">
+                <span className="text-red-600 text-[10px]">Error:</span>
+                <span className="font-mono text-red-700 text-[10px]">{data.eulerError.toExponential(2)}</span>
+              </div>
+            )}
+          </>
+        )}
+        {data.rk4 !== undefined && (
+          <>
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-0.5 bg-blue-500 rounded"></span>
+                <span className="text-blue-700 font-medium">RK4:</span>
+              </span>
+              <span className="font-mono text-blue-900">{data.rk4.toFixed(6)}</span>
+            </div>
+            {data.rk4Error !== undefined && (
+              <div className="flex items-center justify-between gap-3 ml-4">
+                <span className="text-red-600 text-[10px]">Error:</span>
+                <span className="font-mono text-red-700 text-[10px]">{data.rk4Error.toExponential(2)}</span>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
 // COMPONENTE PRINCIPAL
 // ============================================================================
 export default function InteractiveVisualization() {
@@ -90,14 +153,17 @@ export default function InteractiveVisualization() {
   const [showExact, setShowExact] = useState(true)
   const [showDirectionField, setShowDirectionField] = useState(true)
   const [fieldDensity, setFieldDensity] = useState(15)
+  const [overlayRect, setOverlayRect] = useState(null)
 
   const example = EXAMPLES[selectedExample]
+  const chartMargin = { top: 10, right: 30, left: 10, bottom: 30 }
+  const chartContainerRef = useRef(null)
 
   // Calcular soluciones numéricas
   const solutions = useMemo(() => {
     const eulerResult = euler(example.f, example.t0, example.y0, example.tf, stepSize)
     const rk4Result = rk4(example.f, example.t0, example.y0, example.tf, stepSize)
-    
+
     // Generar puntos para la solución exacta (más densos para curva suave)
     const exactPoints = []
     const numExactPoints = 200
@@ -105,9 +171,49 @@ export default function InteractiveVisualization() {
       const t = example.t0 + (example.tf - example.t0) * (i / numExactPoints)
       exactPoints.push({ t, y: example.exact(t) })
     }
-    
+
     return { euler: eulerResult, rk4: rk4Result, exact: exactPoints }
   }, [example, stepSize])
+
+  // Preparar datos para Recharts
+  const chartData = useMemo(() => {
+    const data = []
+    const maxPoints = Math.max(solutions.euler.t.length, solutions.rk4.t.length)
+
+    // Usar el conjunto más grande como base
+    for (let i = 0; i < maxPoints; i++) {
+      const point = {
+        t: solutions.euler.t[i] || solutions.rk4.t[i],
+      }
+
+      if (i < solutions.euler.t.length) {
+        point.euler = solutions.euler.y[i]
+        point.eulerError = Math.abs(solutions.euler.y[i] - example.exact(solutions.euler.t[i]))
+      }
+
+      if (i < solutions.rk4.t.length) {
+        point.rk4 = solutions.rk4.y[i]
+        point.rk4Error = Math.abs(solutions.rk4.y[i] - example.exact(solutions.rk4.t[i]))
+      }
+
+      point.exact = example.exact(point.t)
+
+      data.push(point)
+    }
+
+    // Agregar puntos de la solución exacta para curva suave
+    const exactDense = []
+    const numPoints = 200
+    for (let i = 0; i <= numPoints; i++) {
+      const t = example.t0 + (example.tf - example.t0) * (i / numPoints)
+      exactDense.push({
+        t,
+        exact: example.exact(t)
+      })
+    }
+
+    return { data, exactDense }
+  }, [solutions, example])
 
   // Calcular límites del gráfico
   const bounds = useMemo(() => {
@@ -172,37 +278,62 @@ export default function InteractiveVisualization() {
     }
   }, [solutions, example])
 
-  // Funciones de conversión a coordenadas SVG (porcentaje)
-  const toX = (t) => ((t - bounds.tMin) / (bounds.tMax - bounds.tMin)) * 100
-  const toY = (y) => (1 - (y - bounds.yMin) / (bounds.yMax - bounds.yMin)) * 100
+  useEffect(() => {
+    if (!chartContainerRef.current) return
+    const wrapper = chartContainerRef.current.querySelector('.recharts-wrapper')
+    if (!wrapper) return
+    if (typeof window === 'undefined' || typeof window.ResizeObserver === 'undefined') {
+      setOverlayRect({
+        top: chartMargin.top,
+        left: chartMargin.left,
+        width: chartContainerRef.current.clientWidth - (chartMargin.left + chartMargin.right),
+        height: chartContainerRef.current.clientHeight - (chartMargin.top + chartMargin.bottom)
+      })
+      return
+    }
 
-  // Generar path para una serie de puntos
-  const generatePath = (points, getT, getY) => {
-    if (points.length === 0) return ''
-    
-    let path = `M ${toX(getT(points[0]))} ${toY(getY(points[0]))}`
-    for (let i = 1; i < points.length; i++) {
-      const t = getT(points[i])
-      const y = getY(points[i])
-      if (isFinite(y)) {
-        path += ` L ${toX(t)} ${toY(y)}`
+    const updateOverlayRect = () => {
+      if (!chartContainerRef.current || !wrapper) return
+      
+      // Buscar el área de trazado real del gráfico (cartesian grid o surface)
+      const cartesianGrid = wrapper.querySelector('.recharts-cartesian-grid')
+      const parentRect = chartContainerRef.current.getBoundingClientRect()
+      
+      if (cartesianGrid) {
+        // Usar las dimensiones del grid cartesiano que representa el área de datos real
+        const gridRect = cartesianGrid.getBoundingClientRect()
+        setOverlayRect({
+          top: gridRect.top - parentRect.top,
+          left: gridRect.left - parentRect.left,
+          width: gridRect.width,
+          height: gridRect.height
+        })
+      } else {
+        // Fallback: usar el wrapper con los márgenes
+        const wrapperRect = wrapper.getBoundingClientRect()
+        setOverlayRect({
+          top: wrapperRect.top - parentRect.top + chartMargin.top,
+          left: wrapperRect.left - parentRect.left + chartMargin.left,
+          width: wrapperRect.width - chartMargin.left - chartMargin.right,
+          height: wrapperRect.height - chartMargin.top - chartMargin.bottom
+        })
       }
     }
-    return path
-  }
 
-  // Generar ticks para los ejes
-  const generateTicks = (min, max, count = 5) => {
-    const step = (max - min) / count
-    const ticks = []
-    for (let i = 0; i <= count; i++) {
-      ticks.push(min + i * step)
+    // Pequeño delay para asegurar que Recharts haya renderizado
+    const timeoutId = setTimeout(updateOverlayRect, 50)
+    
+    const resizeObserver = new window.ResizeObserver(updateOverlayRect)
+    resizeObserver.observe(wrapper)
+    window.addEventListener('resize', updateOverlayRect)
+
+    return () => {
+      clearTimeout(timeoutId)
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', updateOverlayRect)
     }
-    return ticks
-  }
+  }, [chartData, bounds, showDirectionField, fieldDensity, chartMargin.left, chartMargin.right, chartMargin.top, chartMargin.bottom])
 
-  const tTicks = generateTicks(bounds.tMin, bounds.tMax, 5)
-  const yTicks = generateTicks(bounds.yMin, bounds.yMax, 5)
 
   // Reset controles
   const handleReset = () => {
@@ -381,57 +512,16 @@ export default function InteractiveVisualization() {
         </div>
       </div>
 
-      {/* Gráfica SVG */}
+      {/* Gráfica con Recharts */}
       <Card title="3. Gráfica Comparativa">
-        <div className="relative bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {/* Contenedor del gráfico con padding para labels */}
-          <div className="relative" style={{ paddingLeft: '50px', paddingBottom: '40px', paddingRight: '20px', paddingTop: '20px' }}>
-            {/* Área del gráfico */}
-            <div className="relative" style={{ height: '400px' }}>
-              {/* SVG principal */}
-              <svg
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                className="absolute inset-0 w-full h-full"
-                style={{ overflow: 'visible' }}
-              >
-                {/* Grid */}
-                <g className="grid">
-                  {/* Líneas verticales */}
-                  {tTicks.map((t, i) => (
-                    <line
-                      key={`v-${i}`}
-                      x1={`${toX(t)}%`}
-                      y1="0%"
-                      x2={`${toX(t)}%`}
-                      y2="100%"
-                      stroke="#e5e7eb"
-                      strokeWidth="0.5"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  ))}
-                  {/* Líneas horizontales */}
-                  {yTicks.map((y, i) => (
-                    <line
-                      key={`h-${i}`}
-                      x1="0%"
-                      y1={`${toY(y)}%`}
-                      x2="100%"
-                      y2={`${toY(y)}%`}
-                      stroke="#e5e7eb"
-                      strokeWidth="0.5"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  ))}
-                </g>
-
-                {/* Ejes */}
-                <line x1="0%" y1="100%" x2="100%" y2="100%" stroke="#9ca3af" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                <line x1="0%" y1="0%" x2="0%" y2="100%" stroke="#9ca3af" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-              </svg>
-
-              {/* Campo de direcciones (capa separada) */}
-              {showDirectionField && (
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div
+            ref={chartContainerRef}
+            className="relative w-full"
+            style={{ height: 500 }}
+          >
+            {showDirectionField && overlayRect && (
+              <div className="pointer-events-none absolute" style={overlayRect}>
                 <SVGDirectionField
                   f={example.f}
                   tMin={bounds.tMin}
@@ -439,155 +529,93 @@ export default function InteractiveVisualization() {
                   yMin={bounds.yMin}
                   yMax={bounds.yMax}
                   gridCountX={fieldDensity}
-                  gridCountY={Math.round(fieldDensity * 0.8)}
-                  arrowScale={0.6}
+                  gridCountY={Math.max(6, Math.round(fieldDensity * 0.8))}
+                  arrowScale={0.85}
                   color="#9ca3af"
-                  opacity={0.4}
+                  opacity={0.35}
                   strokeWidth={1}
+                />
+              </div>
+            )}
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsLineChart
+                margin={chartMargin}
+              >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis
+                dataKey="t"
+                type="number"
+                domain={[bounds.tMin, bounds.tMax]}
+                label={{ value: 't', position: 'insideBottom', offset: -5, style: { fontWeight: 600 } }}
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => value.toFixed(2)}
+                allowDataOverflow={false}
+              />
+              <YAxis
+                type="number"
+                domain={[bounds.yMin, bounds.yMax]}
+                label={{ value: 'y', angle: -90, position: 'insideLeft', style: { fontWeight: 600 } }}
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => value.toFixed(2)}
+                allowDataOverflow={false}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend
+                wrapperStyle={{ paddingTop: '20px' }}
+                iconType="line"
+              />
+
+              {/* Solución exacta - curva suave */}
+              {showExact && (
+                <Line
+                  data={chartData.exactDense}
+                  dataKey="exact"
+                  stroke="#10b981"
+                  strokeWidth={2.5}
+                  dot={false}
+                  name="Exacta"
+                  isAnimationActive={false}
                 />
               )}
 
-              {/* Curvas de solución */}
-              <svg
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                className="absolute inset-0 w-full h-full"
-                style={{ overflow: 'visible' }}
-              >
-                {/* Solución exacta */}
-                {showExact && (
-                  <path
-                    d={generatePath(solutions.exact, p => p.t, p => p.y)}
-                    fill="none"
-                    stroke="#10b981"
-                    strokeWidth="2.5"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                )}
+              {/* Euler */}
+              {showEuler && (
+                <Line
+                  data={chartData.data}
+                  dataKey="euler"
+                  stroke="#f97316"
+                  strokeWidth={2}
+                  strokeDasharray="5 3"
+                  dot={{ fill: '#f97316', r: chartData.data.length <= 50 ? 3 : 0 }}
+                  name="Euler"
+                  isAnimationActive={false}
+                />
+              )}
 
-                {/* Euler - línea */}
-                {showEuler && (
-                  <path
-                    d={generatePath(
-                      solutions.euler.t.map((t, i) => ({ t, y: solutions.euler.y[i] })),
-                      p => p.t,
-                      p => p.y
-                    )}
-                    fill="none"
-                    stroke="#f97316"
-                    strokeWidth="2"
-                    strokeDasharray="5,3"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                )}
-
-                {/* RK4 - línea */}
-                {showRK4 && (
-                  <path
-                    d={generatePath(
-                      solutions.rk4.t.map((t, i) => ({ t, y: solutions.rk4.y[i] })),
-                      p => p.t,
-                      p => p.y
-                    )}
-                    fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="2"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                )}
-
-                {/* Euler - puntos */}
-                {showEuler && solutions.euler.t.length <= 50 && solutions.euler.t.map((t, i) => (
-                  <circle
-                    key={`euler-${i}`}
-                    cx={`${toX(t)}%`}
-                    cy={`${toY(solutions.euler.y[i])}%`}
-                    r="0.6"
-                    fill="#f97316"
-                    stroke="#fff"
-                    strokeWidth="0.2"
-                  />
-                ))}
-
-                {/* RK4 - puntos */}
-                {showRK4 && solutions.rk4.t.length <= 50 && solutions.rk4.t.map((t, i) => (
-                  <circle
-                    key={`rk4-${i}`}
-                    cx={`${toX(t)}%`}
-                    cy={`${toY(solutions.rk4.y[i])}%`}
-                    r="0.6"
-                    fill="#3b82f6"
-                    stroke="#fff"
-                    strokeWidth="0.2"
-                  />
-                ))}
-              </svg>
-            </div>
-
-            {/* Labels eje Y (izquierda) */}
-            <div className="absolute left-0 top-0 bottom-0 w-[50px] flex flex-col justify-between py-[20px]" style={{ marginLeft: '-50px', height: '400px' }}>
-              {yTicks.slice().reverse().map((y, i) => (
-                <div key={i} className="text-xs text-gray-500 text-right pr-2">
-                  {y.toFixed(1)}
-                </div>
-              ))}
-            </div>
-
-            {/* Labels eje X (abajo) */}
-            <div className="absolute left-0 right-0 bottom-0 h-[40px] flex justify-between" style={{ marginBottom: '-40px', marginLeft: '50px', marginRight: '20px' }}>
-              {tTicks.map((t, i) => (
-                <div key={i} className="text-xs text-gray-500 text-center">
-                  {t.toFixed(1)}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Label del eje Y */}
-          <div className="absolute left-2 top-1/2 -translate-y-1/2 -rotate-90 text-sm font-medium text-gray-600">
-            y
-          </div>
-
-          {/* Label del eje X */}
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-sm font-medium text-gray-600">
-            t
+              {/* RK4 */}
+              {showRK4 && (
+                <Line
+                  data={chartData.data}
+                  dataKey="rk4"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  dot={{ fill: '#3b82f6', r: chartData.data.length <= 50 ? 3 : 0 }}
+                  name="RK4"
+                  isAnimationActive={false}
+                />
+              )}
+            </RechartsLineChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Leyenda */}
-        <div className="flex flex-wrap gap-4 mt-4 justify-center">
-          {showExact && (
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-0.5 bg-green-500 rounded"></div>
-              <span className="text-sm text-gray-700">Exacta</span>
-            </div>
-          )}
-          {showEuler && (
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-0.5 bg-orange-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #f97316, #f97316 5px, transparent 5px, transparent 8px)' }}></div>
-              <span className="text-sm text-gray-700">Euler</span>
-            </div>
-          )}
-          {showRK4 && (
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-0.5 bg-blue-500 rounded"></div>
-              <span className="text-sm text-gray-700">RK4</span>
-            </div>
-          )}
-          {showDirectionField && (
-            <div className="flex items-center gap-2">
-              <Compass size={14} className="text-gray-400" />
-              <span className="text-sm text-gray-700">Campo de Direcciones</span>
-            </div>
-          )}
-        </div>
-
+        {/* Info sobre el campo de direcciones */}
         {showDirectionField && (
-          <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-start gap-2">
+          <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-start gap-2">
             <Info size={16} className="text-gray-500 mt-0.5 flex-shrink-0" />
             <p className="text-xs text-gray-600">
-              Las flechas grises muestran la dirección del campo de pendientes en cada punto. 
-              Las curvas solución siempre son tangentes a estas flechas.
+              Las flechas grises en el fondo muestran el <strong>campo de direcciones</strong>: la dirección de la pendiente en cada punto.
+              Las curvas solución siempre son tangentes a estas flechas. Pasa el mouse sobre la gráfica para ver valores exactos y errores.
             </p>
           </div>
         )}
@@ -718,3 +746,5 @@ export default function InteractiveVisualization() {
     </div>
   )
 }
+
+
