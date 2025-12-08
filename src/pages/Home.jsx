@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen, FlaskConical, Target, Calculator, TrendingUp, GitCompare, Lightbulb, Zap } from 'lucide-react'
-import banner from '../assets/EDOLab-banner.png'
+// import banner from '../assets/EDOLab-banner.png'
 import logo from '../assets/EDOLab-Logo.png'
+import CTA from '../assets/EDOLab-CTA.png'
 
 export default function Home() {
   return (
@@ -40,7 +41,7 @@ export default function Home() {
 
             {/* Banner */}
             <div className="mb-8 animate-fadeIn" style={{animationDelay: '0.4s'}}>
-              <img src={banner} alt="EDOLab Banner" className="w-full max-w-4xl mx-auto rounded-lg shadow-ms-lg border-2 border-neutral-200" />
+              <img src={CTA} alt="EDOLab CTA" className="w-full max-w-4xl mx-auto rounded-lg shadow-ms-lg border-2 border-neutral-200" />
             </div>
           </div>
         </div>

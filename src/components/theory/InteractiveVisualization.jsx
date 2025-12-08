@@ -1,310 +1,267 @@
-import { useState } from 'react'
-import { LineChart, PlayCircle, RotateCcw, TrendingUp, Zap } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { LineChart, PlayCircle, RotateCcw, TrendingUp, Zap, Compass, Info } from 'lucide-react'
 import Card from '../shared/Card'
 import MathFormula from '../shared/MathFormula'
-import { LineChart as RechartsLine, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import SVGDirectionField from '../visualization/SVGDirectionField'
 import { euler } from '../../utils/solvers/euler'
 import { rk4 } from '../../utils/solvers/rk4'
 
-/**
- * Página: Visualización Interactiva
- */
+// ============================================================================
+// DATOS DE EJEMPLOS
+// ============================================================================
+const EXAMPLES = {
+  exponential: {
+    name: 'Crecimiento Exponencial',
+    equation: "dy/dt = y",
+    displayEq: "\\frac{dy}{dt} = y",
+    f: (t, y) => y,
+    exact: (t) => Math.exp(t),
+    y0: 1,
+    t0: 0,
+    tf: 2,
+    description: 'La población crece proporcionalmente a su tamaño actual'
+  },
+  decay: {
+    name: 'Decaimiento Exponencial',
+    equation: "dy/dt = -y",
+    displayEq: "\\frac{dy}{dt} = -y",
+    f: (t, y) => -y,
+    exact: (t) => Math.exp(-t),
+    y0: 1,
+    t0: 0,
+    tf: 3,
+    description: 'Desintegración radiactiva o descarga de capacitor'
+  },
+  quadratic: {
+    name: 'Crecimiento Cuadrático',
+    equation: "dy/dt = t²",
+    displayEq: "\\frac{dy}{dt} = t^2",
+    f: (t, _y) => t * t,
+    exact: (t) => (t * t * t) / 3,
+    y0: 0,
+    t0: 0,
+    tf: 2,
+    description: 'La tasa de cambio depende del tiempo al cuadrado'
+  },
+  sine: {
+    name: 'Oscilación Sinusoidal',
+    equation: "dy/dt = cos(t)",
+    displayEq: "\\frac{dy}{dt} = \\cos(t)",
+    f: (t, _y) => Math.cos(t),
+    exact: (t) => Math.sin(t),
+    y0: 0,
+    t0: 0,
+    tf: 6.28,
+    description: 'Movimiento armónico simple'
+  },
+  logistic: {
+    name: 'Crecimiento Logístico',
+    equation: "dy/dt = y(1-y)",
+    displayEq: "\\frac{dy}{dt} = y(1-y)",
+    f: (t, y) => y * (1 - y),
+    exact: (t) => 1 / (1 + 9 * Math.exp(-t)),
+    y0: 0.1,
+    t0: 0,
+    tf: 8,
+    description: 'Población con capacidad de carga limitada'
+  },
+  cooling: {
+    name: 'Ley de Enfriamiento',
+    equation: "dT/dt = -0.5(T - 20)",
+    displayEq: "\\frac{dT}{dt} = -0.5(T - 20)",
+    f: (t, T) => -0.5 * (T - 20),
+    exact: (t) => 20 + 80 * Math.exp(-0.5 * t),
+    y0: 100,
+    t0: 0,
+    tf: 10,
+    description: 'Objeto caliente enfriándose en ambiente a 20°C'
+  }
+}
+
+// ============================================================================
+// COMPONENTE PRINCIPAL
+// ============================================================================
 export default function InteractiveVisualization() {
+  // Estado
   const [selectedExample, setSelectedExample] = useState('exponential')
   const [stepSize, setStepSize] = useState(0.1)
   const [showEuler, setShowEuler] = useState(true)
   const [showRK4, setShowRK4] = useState(true)
   const [showExact, setShowExact] = useState(true)
+  const [showDirectionField, setShowDirectionField] = useState(true)
+  const [fieldDensity, setFieldDensity] = useState(15)
 
-  const examples = {
-    exponential: {
-      name: 'Crecimiento Exponencial',
-      equation: "dy/dt = y",
-      displayEq: "\\frac{dy}{dt} = y",
-      f: (t, y) => y,
-      exact: (t) => Math.exp(t),
-      y0: 1,
-      t0: 0,
-      tf: 2,
-      description: 'La población crece proporcionalmente a su tamaño actual',
-      color: 'green'
-    },
-    decay: {
-      name: 'Decaimiento Exponencial',
-      equation: "dy/dt = -y",
-      displayEq: "\\frac{dy}{dt} = -y",
-      f: (t, y) => -y,
-      exact: (t) => Math.exp(-t),
-      y0: 1,
-      t0: 0,
-      tf: 3,
-      description: 'Desintegración radiactiva o descarga de capacitor',
-      color: 'blue'
-    },
-    quadratic: {
-      name: 'Crecimiento Cuadrático',
-      equation: "dy/dt = t²",
-      displayEq: "\\frac{dy}{dt} = t^2",
-      f: (t, y) => t * t,
-      exact: (t) => (t * t * t) / 3,
-      y0: 0,
-      t0: 0,
-      tf: 2,
-      description: 'La tasa de cambio depende del tiempo al cuadrado',
-      color: 'purple'
-    },
-    sine: {
-      name: 'Oscilación Sinusoidal',
-      equation: "dy/dt = cos(t)",
-      displayEq: "\\frac{dy}{dt} = \\cos(t)",
-      f: (t, y) => Math.cos(t),
-      exact: (t) => Math.sin(t),
-      y0: 0,
-      t0: 0,
-      tf: 6.28,
-      description: 'Movimiento armónico simple',
-      color: 'orange'
-    },
-    logistic: {
-      name: 'Crecimiento Logístico',
-      equation: "dy/dt = y(1-y)",
-      displayEq: "\\frac{dy}{dt} = y(1-y)",
-      f: (t, y) => y * (1 - y),
-      exact: (t) => 1 / (1 + 9 * Math.exp(-t)),
-      y0: 0.1,
-      t0: 0,
-      tf: 8,
-      description: 'Población con capacidad de carga limitada',
-      color: 'red'
-    },
-    cooling: {
-      name: 'Ley de Enfriamiento de Newton',
-      equation: "dT/dt = -0.5(T - 20)",
-      displayEq: "\\frac{dT}{dt} = -0.5(T - 20)",
-      f: (t, T) => -0.5 * (T - 20),
-      exact: (t) => 20 + 80 * Math.exp(-0.5 * t),
-      y0: 100,
-      t0: 0,
-      tf: 10,
-      description: 'Objeto caliente enfriándose en ambiente a 20°C',
-      color: 'cyan'
-    }
-  }
+  const example = EXAMPLES[selectedExample]
 
-  const example = examples[selectedExample]
-
-  // Generar datos para la gráfica
-  const generateData = () => {
-    const data = []
-
-    // Calcular con los métodos numéricos
+  // Calcular soluciones numéricas
+  const solutions = useMemo(() => {
     const eulerResult = euler(example.f, example.t0, example.y0, example.tf, stepSize)
     const rk4Result = rk4(example.f, example.t0, example.y0, example.tf, stepSize)
-
-    // Usar los puntos de tiempo de los métodos numéricos + puntos adicionales para suavidad
-    const timePoints = new Set()
-
-    // Agregar puntos de Euler y RK4
-    eulerResult.t.forEach(t => timePoints.add(t))
-    rk4Result.t.forEach(t => timePoints.add(t))
-
-    // Agregar puntos intermedios para la curva exacta (más suave)
-    const smoothPoints = 200
-    for (let i = 0; i <= smoothPoints; i++) {
-      const t = example.t0 + (example.tf - example.t0) * (i / smoothPoints)
-      timePoints.add(t)
+    
+    // Generar puntos para la solución exacta (más densos para curva suave)
+    const exactPoints = []
+    const numExactPoints = 200
+    for (let i = 0; i <= numExactPoints; i++) {
+      const t = example.t0 + (example.tf - example.t0) * (i / numExactPoints)
+      exactPoints.push({ t, y: example.exact(t) })
     }
+    
+    return { euler: eulerResult, rk4: rk4Result, exact: exactPoints }
+  }, [example, stepSize])
 
-    // Convertir a array y ordenar
-    const sortedTimes = Array.from(timePoints).sort((a, b) => a - b)
+  // Calcular límites del gráfico
+  const bounds = useMemo(() => {
+    const allYValues = [
+      ...solutions.exact.map(p => p.y),
+      ...solutions.euler.y,
+      ...solutions.rk4.y
+    ].filter(v => isFinite(v))
+    
+    const yMin = Math.min(...allYValues)
+    const yMax = Math.max(...allYValues)
+    const yPadding = (yMax - yMin) * 0.1
+    
+    return {
+      tMin: example.t0,
+      tMax: example.tf,
+      yMin: yMin - yPadding,
+      yMax: yMax + yPadding
+    }
+  }, [solutions, example])
 
-    // Crear objeto de búsqueda rápida para Euler y RK4
-    const eulerValues = new Map()
-    const rk4Values = new Map()
+  // Calcular errores
+  const errors = useMemo(() => {
+    let maxEulerError = 0, maxRK4Error = 0
+    let maxEulerAt = 0, maxRK4At = 0
+    let sumEulerError = 0, sumRK4Error = 0
+    const details = []
 
-    eulerResult.t.forEach((t, i) => {
-      eulerValues.set(t, eulerResult.y[i])
-    })
-
-    rk4Result.t.forEach((t, i) => {
-      rk4Values.set(t, rk4Result.y[i])
-    })
-
-    // Construir datos para la gráfica
-    sortedTimes.forEach(t => {
-      const point = {
-        t: Number(t.toFixed(4))
-      }
-
-      // Solución exacta (siempre calculamos para curva suave)
-      if (showExact) {
-        point.Exacta = Number(example.exact(t).toFixed(6))
-      }
-
-      // Euler (solo en puntos calculados)
-      if (showEuler && eulerValues.has(t)) {
-        point.Euler = Number(eulerValues.get(t).toFixed(6))
-      }
-
-      // RK4 (solo en puntos calculados)
-      if (showRK4 && rk4Values.has(t)) {
-        point.RK4 = Number(rk4Values.get(t).toFixed(6))
-      }
-
-      data.push(point)
-    })
-
-    return data
-  }
-
-  // Calcular errores máximos y detalles
-  const calculateErrors = () => {
-    const eulerResult = euler(example.f, example.t0, example.y0, example.tf, stepSize)
-    const rk4Result = rk4(example.f, example.t0, example.y0, example.tf, stepSize)
-
-    let maxEulerError = 0
-    let maxRK4Error = 0
-    let maxEulerErrorAt = 0
-    let maxRK4ErrorAt = 0
-    let eulerValueAtMax = 0
-    let rk4ValueAtMax = 0
-    let exactValueAtEulerMax = 0
-    let exactValueAtRK4Max = 0
-    let sumEulerError = 0
-    let sumRK4Error = 0
-
-    const detailedErrors = []
-
-    // Calcular errores en cada punto
-    eulerResult.t.forEach((t, i) => {
+    solutions.euler.t.forEach((t, i) => {
       const exact = example.exact(t)
-      const eulerError = Math.abs(eulerResult.y[i] - exact)
-      const rk4Error = Math.abs(rk4Result.y[i] - exact)
-
-      // Guardar detalles para la tabla
-      detailedErrors.push({
-        step: i,
-        t: t,
-        exact: exact,
-        euler: eulerResult.y[i],
-        eulerError: eulerError,
-        rk4: rk4Result.y[i],
-        rk4Error: rk4Error
-      })
-
-      // Acumular para promedio
+      const eulerError = Math.abs(solutions.euler.y[i] - exact)
+      const rk4Error = Math.abs(solutions.rk4.y[i] - exact)
+      
       sumEulerError += eulerError
       sumRK4Error += rk4Error
-
-      // Encontrar error máximo de Euler
+      
       if (eulerError > maxEulerError) {
         maxEulerError = eulerError
-        maxEulerErrorAt = t
-        eulerValueAtMax = eulerResult.y[i]
-        exactValueAtEulerMax = exact
+        maxEulerAt = t
       }
-
-      // Encontrar error máximo de RK4
       if (rk4Error > maxRK4Error) {
         maxRK4Error = rk4Error
-        maxRK4ErrorAt = t
-        rk4ValueAtMax = rk4Result.y[i]
-        exactValueAtRK4Max = exact
+        maxRK4At = t
       }
+      
+      details.push({
+        step: i, t, exact,
+        euler: solutions.euler.y[i], eulerError,
+        rk4: solutions.rk4.y[i], rk4Error
+      })
     })
 
-    const avgEulerError = sumEulerError / eulerResult.t.length
-    const avgRK4Error = sumRK4Error / rk4Result.t.length
-
     return {
-      maxEulerError,
-      maxRK4Error,
-      maxEulerErrorAt,
-      maxRK4ErrorAt,
-      eulerValueAtMax,
-      rk4ValueAtMax,
-      exactValueAtEulerMax,
-      exactValueAtRK4Max,
-      avgEulerError,
-      avgRK4Error,
-      detailedErrors
+      maxEuler: maxEulerError,
+      maxRK4: maxRK4Error,
+      maxEulerAt,
+      maxRK4At,
+      avgEuler: sumEulerError / solutions.euler.t.length,
+      avgRK4: sumRK4Error / solutions.rk4.t.length,
+      factor: maxEulerError / maxRK4Error,
+      details
     }
+  }, [solutions, example])
+
+  // Funciones de conversión a coordenadas SVG (porcentaje)
+  const toX = (t) => ((t - bounds.tMin) / (bounds.tMax - bounds.tMin)) * 100
+  const toY = (y) => (1 - (y - bounds.yMin) / (bounds.yMax - bounds.yMin)) * 100
+
+  // Generar path para una serie de puntos
+  const generatePath = (points, getT, getY) => {
+    if (points.length === 0) return ''
+    
+    let path = `M ${toX(getT(points[0]))} ${toY(getY(points[0]))}`
+    for (let i = 1; i < points.length; i++) {
+      const t = getT(points[i])
+      const y = getY(points[i])
+      if (isFinite(y)) {
+        path += ` L ${toX(t)} ${toY(y)}`
+      }
+    }
+    return path
   }
 
-  const chartData = generateData()
-  const errors = calculateErrors()
-
-  // Tooltip personalizado
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const t = payload[0].payload.t
-      const slope = example.f(t, payload[0].value)
-
-      return (
-        <div className="bg-white border border-gray-300 rounded-lg p-3 shadow-lg">
-          <p className="font-bold text-sm mb-2">t = {t.toFixed(4)}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              <strong>{entry.name}:</strong> {entry.value?.toFixed(6) || 'N/A'}
-            </p>
-          ))}
-          <div className="border-t border-gray-200 mt-2 pt-2">
-            <p className="text-xs text-gray-600">
-              <strong>dy/dt:</strong> {slope.toFixed(6)}
-            </p>
-          </div>
-        </div>
-      )
+  // Generar ticks para los ejes
+  const generateTicks = (min, max, count = 5) => {
+    const step = (max - min) / count
+    const ticks = []
+    for (let i = 0; i <= count; i++) {
+      ticks.push(min + i * step)
     }
-    return null
+    return ticks
+  }
+
+  const tTicks = generateTicks(bounds.tMin, bounds.tMax, 5)
+  const yTicks = generateTicks(bounds.yMin, bounds.yMax, 5)
+
+  // Reset controles
+  const handleReset = () => {
+    setStepSize(0.1)
+    setShowEuler(true)
+    setShowRK4(true)
+    setShowExact(true)
+    setShowDirectionField(true)
+    setFieldDensity(15)
   }
 
   return (
-    <div className="space-y-8">
-      {/* Introducción */}
+    <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+        <h2 className="text-3xl font-bold text-gray-900 mb-3 flex items-center gap-3">
           <LineChart className="w-8 h-8 text-purple-600" />
           Visualización Interactiva
         </h2>
         <p className="text-lg text-gray-600">
-          Experimenta con diferentes ecuaciones diferenciales y observa cómo los métodos numéricos
-          aproximan las soluciones. Ajusta el tamaño de paso y compara los resultados.
+          Experimenta con diferentes ecuaciones y observa cómo los métodos numéricos aproximan las soluciones.
         </p>
       </div>
 
-      {/* Selector de ejemplos */}
-      <Card title="Selecciona una Ecuación">
+      {/* Selector de ecuaciones */}
+      <Card title="1. Selecciona una Ecuación">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {Object.entries(examples).map(([key, ex]) => (
+          {Object.entries(EXAMPLES).map(([key, ex]) => (
             <button
               key={key}
               onClick={() => setSelectedExample(key)}
               className={`p-4 rounded-lg border-2 transition-all text-left ${
                 selectedExample === key
-                  ? `border-${ex.color}-500 bg-${ex.color}-50`
+                  ? 'border-indigo-500 bg-indigo-50'
                   : 'border-gray-200 hover:border-gray-300 bg-white'
               }`}
             >
-              <h4 className={`font-semibold mb-1 ${selectedExample === key ? `text-${ex.color}-900` : 'text-gray-900'}`}>
+              <h4 className={`font-semibold mb-1 ${selectedExample === key ? 'text-indigo-900' : 'text-gray-900'}`}>
                 {ex.name}
               </h4>
               <div className="text-sm mb-2">
                 <MathFormula>{ex.displayEq}</MathFormula>
               </div>
-              <p className="text-xs text-gray-600">{ex.description}</p>
+              <p className="text-xs text-gray-500">{ex.description}</p>
             </button>
           ))}
         </div>
       </Card>
 
       {/* Controles */}
-      <Card title="Controles de Simulación">
+      <Card title="2. Configura la Simulación">
         <div className="space-y-6">
           {/* Tamaño de paso */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tamaño de paso (h): <span className="text-primary font-bold">{stepSize}</span>
+              Tamaño de paso (h): <span className="text-indigo-600 font-bold">{stepSize}</span>
+              <span className="text-gray-500 ml-2">
+                ({Math.floor((example.tf - example.t0) / stepSize)} pasos)
+              </span>
             </label>
             <input
               type="range"
@@ -313,353 +270,448 @@ export default function InteractiveVisualization() {
               step="0.01"
               value={stepSize}
               onChange={(e) => setStepSize(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
             <div className="flex justify-between text-xs text-gray-500 mt-1">
               <span>0.01 (más preciso)</span>
-              <span>0.5 (más rápido)</span>
+              <span>0.5 (menos preciso)</span>
             </div>
           </div>
 
+          {/* Densidad del campo */}
+          {showDirectionField && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Densidad del campo: <span className="text-indigo-600 font-bold">{fieldDensity}×{fieldDensity}</span>
+              </label>
+              <input
+                type="range"
+                min="8"
+                max="25"
+                step="1"
+                value={fieldDensity}
+                onChange={(e) => setFieldDensity(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              />
+            </div>
+          )}
+
           {/* Toggles */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Mostrar en el gráfico:</label>
-            <div className="flex flex-wrap gap-4">
+            <label className="block text-sm font-medium text-gray-700 mb-3">Mostrar:</label>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={showExact}
                   onChange={(e) => setShowExact(e.target.checked)}
-                  className="w-4 h-4 text-green-600 rounded"
+                  className="w-4 h-4 text-green-600 rounded accent-green-600"
                 />
-                <span className="text-sm text-gray-700">Solución Exacta</span>
+                <span className="text-sm flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-green-500 rounded"></span>
+                  Solución Exacta
+                </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={showEuler}
                   onChange={(e) => setShowEuler(e.target.checked)}
-                  className="w-4 h-4 text-orange-600 rounded"
+                  className="w-4 h-4 text-orange-600 rounded accent-orange-600"
                 />
-                <span className="text-sm text-gray-700">Método de Euler</span>
+                <span className="text-sm flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-orange-500 rounded"></span>
+                  Euler
+                </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={showRK4}
                   onChange={(e) => setShowRK4(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded"
+                  className="w-4 h-4 text-blue-600 rounded accent-blue-600"
                 />
-                <span className="text-sm text-gray-700">Método RK4</span>
+                <span className="text-sm flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-blue-500 rounded"></span>
+                  RK4
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showDirectionField}
+                  onChange={(e) => setShowDirectionField(e.target.checked)}
+                  className="w-4 h-4 text-gray-600 rounded accent-gray-600"
+                />
+                <span className="text-sm flex items-center gap-1">
+                  <Compass size={14} className="text-gray-500" />
+                  Campo de Direcciones
+                </span>
               </label>
             </div>
           </div>
 
-          {/* Botón reset */}
           <button
-            onClick={() => {
-              setStepSize(0.1)
-              setShowEuler(true)
-              setShowRK4(true)
-              setShowExact(true)
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+            onClick={handleReset}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm"
           >
             <RotateCcw size={16} />
-            Resetear Controles
+            Resetear
           </button>
         </div>
       </Card>
 
-      {/* Info del ejemplo */}
-      <Card title={`Ecuación: ${example.name}`}>
-        <div className="space-y-3">
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-2">Ecuación diferencial:</h4>
-            <div className="text-center text-lg">
-              <MathFormula block>{example.displayEq}</MathFormula>
+      {/* Info del problema */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+          <div className="text-xs text-indigo-700 font-medium mb-1">Ecuación</div>
+          <MathFormula>{example.displayEq}</MathFormula>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="text-xs text-blue-700 font-medium mb-1">Condición inicial</div>
+          <MathFormula>{`y(${example.t0}) = ${example.y0}`}</MathFormula>
+        </div>
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+          <div className="text-xs text-purple-700 font-medium mb-1">Intervalo</div>
+          <MathFormula>{`t \\in [${example.t0}, ${example.tf}]`}</MathFormula>
+        </div>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <div className="text-xs text-green-700 font-medium mb-1">Pasos</div>
+          <div className="font-bold text-green-900">{Math.floor((example.tf - example.t0) / stepSize)}</div>
+        </div>
+      </div>
+
+      {/* Gráfica SVG */}
+      <Card title="3. Gráfica Comparativa">
+        <div className="relative bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {/* Contenedor del gráfico con padding para labels */}
+          <div className="relative" style={{ paddingLeft: '50px', paddingBottom: '40px', paddingRight: '20px', paddingTop: '20px' }}>
+            {/* Área del gráfico */}
+            <div className="relative" style={{ height: '400px' }}>
+              {/* SVG principal */}
+              <svg
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                className="absolute inset-0 w-full h-full"
+                style={{ overflow: 'visible' }}
+              >
+                {/* Grid */}
+                <g className="grid">
+                  {/* Líneas verticales */}
+                  {tTicks.map((t, i) => (
+                    <line
+                      key={`v-${i}`}
+                      x1={`${toX(t)}%`}
+                      y1="0%"
+                      x2={`${toX(t)}%`}
+                      y2="100%"
+                      stroke="#e5e7eb"
+                      strokeWidth="0.5"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  ))}
+                  {/* Líneas horizontales */}
+                  {yTicks.map((y, i) => (
+                    <line
+                      key={`h-${i}`}
+                      x1="0%"
+                      y1={`${toY(y)}%`}
+                      x2="100%"
+                      y2={`${toY(y)}%`}
+                      stroke="#e5e7eb"
+                      strokeWidth="0.5"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  ))}
+                </g>
+
+                {/* Ejes */}
+                <line x1="0%" y1="100%" x2="100%" y2="100%" stroke="#9ca3af" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                <line x1="0%" y1="0%" x2="0%" y2="100%" stroke="#9ca3af" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+              </svg>
+
+              {/* Campo de direcciones (capa separada) */}
+              {showDirectionField && (
+                <SVGDirectionField
+                  f={example.f}
+                  tMin={bounds.tMin}
+                  tMax={bounds.tMax}
+                  yMin={bounds.yMin}
+                  yMax={bounds.yMax}
+                  gridCountX={fieldDensity}
+                  gridCountY={Math.round(fieldDensity * 0.8)}
+                  arrowScale={0.6}
+                  color="#9ca3af"
+                  opacity={0.4}
+                  strokeWidth={1}
+                />
+              )}
+
+              {/* Curvas de solución */}
+              <svg
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                className="absolute inset-0 w-full h-full"
+                style={{ overflow: 'visible' }}
+              >
+                {/* Solución exacta */}
+                {showExact && (
+                  <path
+                    d={generatePath(solutions.exact, p => p.t, p => p.y)}
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="2.5"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                )}
+
+                {/* Euler - línea */}
+                {showEuler && (
+                  <path
+                    d={generatePath(
+                      solutions.euler.t.map((t, i) => ({ t, y: solutions.euler.y[i] })),
+                      p => p.t,
+                      p => p.y
+                    )}
+                    fill="none"
+                    stroke="#f97316"
+                    strokeWidth="2"
+                    strokeDasharray="5,3"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                )}
+
+                {/* RK4 - línea */}
+                {showRK4 && (
+                  <path
+                    d={generatePath(
+                      solutions.rk4.t.map((t, i) => ({ t, y: solutions.rk4.y[i] })),
+                      p => p.t,
+                      p => p.y
+                    )}
+                    fill="none"
+                    stroke="#3b82f6"
+                    strokeWidth="2"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                )}
+
+                {/* Euler - puntos */}
+                {showEuler && solutions.euler.t.length <= 50 && solutions.euler.t.map((t, i) => (
+                  <circle
+                    key={`euler-${i}`}
+                    cx={`${toX(t)}%`}
+                    cy={`${toY(solutions.euler.y[i])}%`}
+                    r="0.6"
+                    fill="#f97316"
+                    stroke="#fff"
+                    strokeWidth="0.2"
+                  />
+                ))}
+
+                {/* RK4 - puntos */}
+                {showRK4 && solutions.rk4.t.length <= 50 && solutions.rk4.t.map((t, i) => (
+                  <circle
+                    key={`rk4-${i}`}
+                    cx={`${toX(t)}%`}
+                    cy={`${toY(solutions.rk4.y[i])}%`}
+                    r="0.6"
+                    fill="#3b82f6"
+                    stroke="#fff"
+                    strokeWidth="0.2"
+                  />
+                ))}
+              </svg>
+            </div>
+
+            {/* Labels eje Y (izquierda) */}
+            <div className="absolute left-0 top-0 bottom-0 w-[50px] flex flex-col justify-between py-[20px]" style={{ marginLeft: '-50px', height: '400px' }}>
+              {yTicks.slice().reverse().map((y, i) => (
+                <div key={i} className="text-xs text-gray-500 text-right pr-2">
+                  {y.toFixed(1)}
+                </div>
+              ))}
+            </div>
+
+            {/* Labels eje X (abajo) */}
+            <div className="absolute left-0 right-0 bottom-0 h-[40px] flex justify-between" style={{ marginBottom: '-40px', marginLeft: '50px', marginRight: '20px' }}>
+              {tTicks.map((t, i) => (
+                <div key={i} className="text-xs text-gray-500 text-center">
+                  {t.toFixed(1)}
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <div className="text-xs text-blue-700 font-medium mb-1">Condición inicial</div>
-              <div className="text-sm">
-                <MathFormula>{`y(${example.t0}) = ${example.y0}`}</MathFormula>
-              </div>
-            </div>
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-              <div className="text-xs text-purple-700 font-medium mb-1">Intervalo</div>
-              <div className="text-sm">
-                <MathFormula>{`[${example.t0}, ${example.tf}]`}</MathFormula>
-              </div>
-            </div>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-              <div className="text-xs text-green-700 font-medium mb-1">Número de pasos</div>
-              <div className="text-sm font-bold">
-                {Math.floor((example.tf - example.t0) / stepSize)}
-              </div>
-            </div>
+          {/* Label del eje Y */}
+          <div className="absolute left-2 top-1/2 -translate-y-1/2 -rotate-90 text-sm font-medium text-gray-600">
+            y
           </div>
 
-          <p className="text-sm text-gray-600 italic">
-            {example.description}
-          </p>
+          {/* Label del eje X */}
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-sm font-medium text-gray-600">
+            t
+          </div>
         </div>
-      </Card>
 
-      {/* Gráfica */}
-      <Card title="Gráfica Comparativa">
-        <div className="h-96">
-          <ResponsiveContainer width="100%" height="100%">
-            <RechartsLine data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis
-                dataKey="t"
-                label={{ value: 't', position: 'insideBottomRight', offset: -5 }}
-                stroke="#6b7280"
-              />
-              <YAxis
-                label={{ value: 'y', angle: -90, position: 'insideLeft' }}
-                stroke="#6b7280"
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-
-              {showExact && (
-                <Line
-                  type="monotone"
-                  dataKey="Exacta"
-                  stroke="#10b981"
-                  strokeWidth={3}
-                  dot={false}
-                  name="Exacta"
-                />
-              )}
-
-              {showEuler && (
-                <Line
-                  type="monotone"
-                  dataKey="Euler"
-                  stroke="#f59e0b"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  strokeDasharray="5 5"
-                  name="Euler"
-                  connectNulls={false}
-                />
-              )}
-
-              {showRK4 && (
-                <Line
-                  type="monotone"
-                  dataKey="RK4"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  name="RK4"
-                  connectNulls={false}
-                />
-              )}
-            </RechartsLine>
-          </ResponsiveContainer>
+        {/* Leyenda */}
+        <div className="flex flex-wrap gap-4 mt-4 justify-center">
+          {showExact && (
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-0.5 bg-green-500 rounded"></div>
+              <span className="text-sm text-gray-700">Exacta</span>
+            </div>
+          )}
+          {showEuler && (
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-0.5 bg-orange-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #f97316, #f97316 5px, transparent 5px, transparent 8px)' }}></div>
+              <span className="text-sm text-gray-700">Euler</span>
+            </div>
+          )}
+          {showRK4 && (
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-0.5 bg-blue-500 rounded"></div>
+              <span className="text-sm text-gray-700">RK4</span>
+            </div>
+          )}
+          {showDirectionField && (
+            <div className="flex items-center gap-2">
+              <Compass size={14} className="text-gray-400" />
+              <span className="text-sm text-gray-700">Campo de Direcciones</span>
+            </div>
+          )}
         </div>
+
+        {showDirectionField && (
+          <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-start gap-2">
+            <Info size={16} className="text-gray-500 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-gray-600">
+              Las flechas grises muestran la dirección del campo de pendientes en cada punto. 
+              Las curvas solución siempre son tangentes a estas flechas.
+            </p>
+          </div>
+        )}
       </Card>
 
       {/* Análisis de errores */}
-      <Card title="Análisis de Error - Debugger Educativo">
+      <Card title="4. Análisis de Error">
         <div className="space-y-6">
-          {/* Explicación del cálculo de error */}
-          <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-3">¿Cómo calculamos el error?</h4>
-            <div className="space-y-2 text-sm text-gray-700">
-              <p>
-                <strong>1. Error puntual:</strong> En cada punto <MathFormula>{`t_i`}</MathFormula>, calculamos:
-              </p>
-              <div className="bg-white border border-gray-200 rounded p-3 ml-4">
-                <MathFormula block>
-                  {`E_i = |y_{aproximada}(t_i) - y_{exacta}(t_i)|`}
-                </MathFormula>
-              </div>
-              <p>
-                <strong>2. Error máximo:</strong> Es el mayor error entre todos los puntos:
-              </p>
-              <div className="bg-white border border-gray-200 rounded p-3 ml-4">
-                <MathFormula block>
-                  {`E_{max} = \\max(E_0, E_1, E_2, ..., E_n)`}
-                </MathFormula>
-              </div>
-            </div>
-          </div>
-
           {/* Resumen de errores */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
+            <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
               <div className="flex items-start gap-3">
-                <TrendingUp className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-orange-900 mb-1">Error Máximo - Euler</h4>
-                  <div className="text-2xl font-bold text-orange-700 mb-2">
-                    {errors.maxEulerError.toExponential(4)}
+                <TrendingUp className="w-6 h-6 text-orange-600 flex-shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-orange-900">Error Máximo - Euler</h4>
+                  <div className="text-2xl font-bold text-orange-700 my-1">
+                    {errors.maxEuler.toExponential(3)}
                   </div>
-                  <div className="space-y-1 text-xs text-orange-800">
-                    <p>Ocurre en t = {errors.maxEulerErrorAt.toFixed(4)}</p>
-                    <p>Valor Euler: {errors.eulerValueAtMax.toFixed(6)}</p>
-                    <p>Valor Exacto: {errors.exactValueAtEulerMax.toFixed(6)}</p>
-                  </div>
+                  <p className="text-xs text-orange-700">
+                    en t = {errors.maxEulerAt.toFixed(3)}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
               <div className="flex items-start gap-3">
-                <Zap className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-blue-900 mb-1">Error Máximo - RK4</h4>
-                  <div className="text-2xl font-bold text-blue-700 mb-2">
-                    {errors.maxRK4Error.toExponential(4)}
+                <Zap className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-blue-900">Error Máximo - RK4</h4>
+                  <div className="text-2xl font-bold text-blue-700 my-1">
+                    {errors.maxRK4.toExponential(3)}
                   </div>
-                  <div className="space-y-1 text-xs text-blue-800">
-                    <p>Ocurre en t = {errors.maxRK4ErrorAt.toFixed(4)}</p>
-                    <p>Valor RK4: {errors.rk4ValueAtMax.toFixed(6)}</p>
-                    <p>Valor Exacto: {errors.exactValueAtRK4Max.toFixed(6)}</p>
-                  </div>
+                  <p className="text-xs text-blue-700">
+                    en t = {errors.maxRK4At.toFixed(3)}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Comparación */}
+          {/* Factor de mejora */}
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <h4 className="font-semibold text-purple-900 mb-3">Comparación de Precisión</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="bg-white rounded p-3 border border-purple-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+              <div>
                 <div className="text-xs text-purple-700 font-medium mb-1">Factor de Mejora</div>
-                <div className="text-2xl font-bold text-purple-700">
-                  {(errors.maxEulerError / errors.maxRK4Error).toFixed(1)}x
+                <div className="text-3xl font-bold text-purple-700">
+                  {isFinite(errors.factor) ? errors.factor.toFixed(0) : '∞'}×
                 </div>
-                <div className="text-xs text-purple-600 mt-1">RK4 es más preciso</div>
+                <div className="text-xs text-purple-600">RK4 más preciso</div>
               </div>
-              <div className="bg-white rounded p-3 border border-purple-200">
-                <div className="text-xs text-purple-700 font-medium mb-1">Error Promedio - Euler</div>
-                <div className="text-lg font-bold text-orange-600">
-                  {errors.avgEulerError.toExponential(3)}
+              <div>
+                <div className="text-xs text-purple-700 font-medium mb-1">Error Promedio Euler</div>
+                <div className="text-xl font-bold text-orange-600">
+                  {errors.avgEuler.toExponential(2)}
                 </div>
-                <div className="text-xs text-purple-600 mt-1">Promedio de todos los puntos</div>
               </div>
-              <div className="bg-white rounded p-3 border border-purple-200">
-                <div className="text-xs text-purple-700 font-medium mb-1">Error Promedio - RK4</div>
-                <div className="text-lg font-bold text-blue-600">
-                  {errors.avgRK4Error.toExponential(3)}
+              <div>
+                <div className="text-xs text-purple-700 font-medium mb-1">Error Promedio RK4</div>
+                <div className="text-xl font-bold text-blue-600">
+                  {errors.avgRK4.toExponential(2)}
                 </div>
-                <div className="text-xs text-purple-600 mt-1">Promedio de todos los puntos</div>
               </div>
             </div>
-            <p className="text-sm text-purple-800">
-              Con h = {stepSize}, RK4 reduce el error máximo de{' '}
-              <span className="font-mono font-bold">{errors.maxEulerError.toExponential(2)}</span> a{' '}
-              <span className="font-mono font-bold">{errors.maxRK4Error.toExponential(2)}</span>
-            </p>
           </div>
 
-          {/* Desglose paso a paso (primeros 5 pasos) */}
-          <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-3">
-              Desglose de Errores (Primeros 5 pasos)
-            </h4>
+          {/* Tabla de pasos */}
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-3">Primeros 5 pasos</h4>
             <div className="overflow-x-auto">
               <table className="w-full text-xs border-collapse">
-                <thead className="bg-gray-200">
+                <thead className="bg-gray-100">
                   <tr>
-                    <th className="border border-gray-300 px-2 py-1">Paso</th>
-                    <th className="border border-gray-300 px-2 py-1">t</th>
-                    <th className="border border-gray-300 px-2 py-1">Exacta</th>
-                    <th className="border border-gray-300 px-2 py-1">Euler</th>
-                    <th className="border border-gray-300 px-2 py-1">Error Euler</th>
-                    <th className="border border-gray-300 px-2 py-1">RK4</th>
-                    <th className="border border-gray-300 px-2 py-1">Error RK4</th>
+                    <th className="border border-gray-300 px-2 py-1.5">Paso</th>
+                    <th className="border border-gray-300 px-2 py-1.5">t</th>
+                    <th className="border border-gray-300 px-2 py-1.5 text-green-700">Exacta</th>
+                    <th className="border border-gray-300 px-2 py-1.5 text-orange-700">Euler</th>
+                    <th className="border border-gray-300 px-2 py-1.5 text-red-700">Error</th>
+                    <th className="border border-gray-300 px-2 py-1.5 text-blue-700">RK4</th>
+                    <th className="border border-gray-300 px-2 py-1.5 text-red-700">Error</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {errors.detailedErrors.slice(0, 5).map((row, idx) => (
+                  {errors.details.slice(0, 5).map((row, idx) => (
                     <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="border border-gray-300 px-2 py-1 text-center font-medium">{row.step}</td>
-                      <td className="border border-gray-300 px-2 py-1 text-center">{row.t.toFixed(4)}</td>
-                      <td className="border border-gray-300 px-2 py-1 text-center text-green-700 font-medium">
-                        {row.exact.toFixed(6)}
-                      </td>
-                      <td className="border border-gray-300 px-2 py-1 text-center text-orange-600">
-                        {row.euler.toFixed(6)}
-                      </td>
-                      <td className="border border-gray-300 px-2 py-1 text-center text-red-600 font-mono">
-                        {row.eulerError.toExponential(2)}
-                      </td>
-                      <td className="border border-gray-300 px-2 py-1 text-center text-blue-600">
-                        {row.rk4.toFixed(6)}
-                      </td>
-                      <td className="border border-gray-300 px-2 py-1 text-center text-red-600 font-mono">
-                        {row.rk4Error.toExponential(2)}
-                      </td>
+                      <td className="border border-gray-300 px-2 py-1 text-center">{row.t.toFixed(3)}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center text-green-700">{row.exact.toFixed(6)}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center text-orange-600">{row.euler.toFixed(6)}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center text-red-600 font-mono">{row.eulerError.toExponential(2)}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center text-blue-600">{row.rk4.toFixed(6)}</td>
+                      <td className="border border-gray-300 px-2 py-1 text-center text-red-600 font-mono">{row.rk4Error.toExponential(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-gray-600 mt-2 italic">
-              Mostrando los primeros 5 de {errors.detailedErrors.length} pasos totales
-            </p>
-          </div>
-
-          {/* Interpretación */}
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-            <h4 className="font-semibold text-blue-900 mb-2">💡 Interpretación</h4>
-            <ul className="space-y-2 text-sm text-blue-800">
-              <li className="flex gap-2">
-                <span className="text-blue-600">•</span>
-                <span>
-                  El <strong>error crece con el tiempo</strong> porque los errores se acumulan en cada paso
-                </span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-blue-600">•</span>
-                <span>
-                  RK4 tiene errores <strong>varios órdenes de magnitud menores</strong> que Euler
-                </span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-blue-600">•</span>
-                <span>
-                  Reducir h (tamaño de paso) <strong>reduce los errores</strong>, pero RK4 sigue siendo superior
-                </span>
-              </li>
-            </ul>
           </div>
         </div>
       </Card>
 
       {/* Consejos */}
       <Card title="💡 Experimenta">
-        <div className="space-y-3 text-sm text-gray-700">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div className="flex gap-2 items-start">
-            <PlayCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-            <p>
-              <strong>Aumenta el tamaño de paso (h):</strong> Observa cómo el método de Euler se desvía
-              rápidamente de la solución exacta, mientras que RK4 mantiene mejor precisión.
-            </p>
+            <PlayCircle className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <strong className="text-gray-900">Aumenta h:</strong>
+              <p className="text-gray-600">Observa cómo Euler se desvía más que RK4</p>
+            </div>
           </div>
           <div className="flex gap-2 items-start">
-            <PlayCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-            <p>
-              <strong>Reduce el tamaño de paso:</strong> Ambos métodos mejoran, pero RK4 alcanza
-              precisión excelente con menos pasos que Euler.
-            </p>
+            <PlayCircle className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <strong className="text-gray-900">Reduce h:</strong>
+              <p className="text-gray-600">RK4 alcanza precisión excelente con menos pasos</p>
+            </div>
           </div>
           <div className="flex gap-2 items-start">
-            <PlayCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-            <p>
-              <strong>Prueba diferentes ecuaciones:</strong> Nota que la ventaja de RK4 es más evidente
-              en problemas con cambios rápidos (como el crecimiento logístico cerca del punto de inflexión).
-            </p>
+            <PlayCircle className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <strong className="text-gray-900">Cambia la ecuación:</strong>
+              <p className="text-gray-600">Prueba el crecimiento logístico para ver diferencias</p>
+            </div>
           </div>
         </div>
       </Card>
