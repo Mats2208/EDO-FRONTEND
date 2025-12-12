@@ -96,21 +96,33 @@ export default function Simulator() {
 
   // Handler para simular
   const handleSimulate = async () => {
-    if (!parsedFunction) {
-      setError('Por favor, valida la ecuación primero')
-      return
-    }
-
     setIsSimulating(true)
     setError(null)
     setCurrentStep(3) // Avanzar al paso 3 (simulando)
 
     try {
+      // Reparsear la ecuación actual para asegurar que está actualizada
+      let funcToUse = parsedFunction
+
+      if (!funcToUse) {
+        try {
+          funcToUse = parseEquation(equation, {
+            variables: { independent: 'x', dependent: 'y' }
+          })
+          setParsedFunction(() => funcToUse)
+        } catch (err) {
+          setError('Error al parsear la ecuación: ' + err.message)
+          setIsSimulating(false)
+          setCurrentStep(2)
+          return
+        }
+      }
+
       const { t0, y0, tf, h } = parameters
 
       // PASO 1: Ejecutar métodos numéricos (Euler y RK4)
-      const eulerResult = euler(parsedFunction, t0, y0, tf, h)
-      const rk4Result = rk4(parsedFunction, t0, y0, tf, h)
+      const eulerResult = euler(funcToUse, t0, y0, tf, h)
+      const rk4Result = rk4(funcToUse, t0, y0, tf, h)
 
       // Generar arrays de pasos para la tabla detallada
       const eulerSteps = eulerResult.t.map((t, i) => ({
@@ -388,6 +400,7 @@ export default function Simulator() {
               rk4Data={results.rk4}
               exactData={results.exact}
               showExact={!!results.exact}
+              parsedFunction={parsedFunction}
             />
           </Card>
 

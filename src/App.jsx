@@ -5,6 +5,7 @@ import Theory from './pages/Theory'
 import Laboratory from './pages/Laboratory'
 import Problems from './pages/Problems'
 import CategoryProblems from './pages/CategoryProblems'
+import ProblemDetail from './pages/ProblemDetail'
 import About from './pages/About'
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="laboratory" element={<Laboratory />} />
           <Route path="problems" element={<Problems />} />
           <Route path="problems/:categoryId" element={<CategoryProblems />} />
+          <Route path="problems/:categoryId/:problemId" element={<ProblemDetail />} />
           <Route path="about" element={<About />} />
         </Route>
       </Routes>

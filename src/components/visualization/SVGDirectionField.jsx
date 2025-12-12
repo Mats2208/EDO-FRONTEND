@@ -34,20 +34,20 @@ export default function SVGDirectionField({
   // Calcular todas las flechas con useMemo para evitar recálculos innecesarios
   const arrows = useMemo(() => {
     const result = []
-    
+
     // Espaciado entre flechas en coordenadas matemáticas
     const tStep = (tMax - tMin) / (gridCountX + 1)
     const yStep = (yMax - yMin) / (gridCountY + 1)
-    
+
     // Longitud máxima de las flechas (en coordenadas matemáticas)
     const maxArrowLengthT = tStep * arrowScale
     const maxArrowLengthY = yStep * arrowScale
-    
+
     for (let i = 1; i <= gridCountX; i++) {
       for (let j = 1; j <= gridCountY; j++) {
         const t = tMin + i * tStep
         const y = yMin + j * yStep
-        
+
         try {
           const slope = f(t, y)
           
