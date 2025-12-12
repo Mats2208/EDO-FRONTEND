@@ -23,6 +23,7 @@ import Card from '../components/shared/Card'
 import ResultsChart from '../components/laboratory/ResultsChart'
 import MetricsTable from '../components/laboratory/MetricsTable'
 import StepsTable from '../components/laboratory/StepsTable'
+import ChatBox from '../components/chat/ChatBox'
 
 // Mapeo de iconos
 const iconMap = {
@@ -557,6 +558,24 @@ export default function ProblemDetail() {
           Volver a {category.name}
         </Link>
       </div>
+
+      {/* Chat con IA */}
+      <ChatBox
+        problemContext={{
+          problem_id: problemId,
+          problem_name: problem.name,
+          category: category.name,
+          equation: problem.equation,
+          description: problem.description,
+          theory: problem.theory || null
+        }}
+        parameters={{
+          t0: parameters.t0,
+          y0: parameters.y0,
+          tf: parameters.tf,
+          h: parameters.h
+        }}
+      />
     </div>
   )
 }

@@ -149,10 +149,10 @@ export default function SVGDirectionField({
             {/* Punta de flecha manual */}
             <path
               d={`
-                M ${x2}% ${y2}%
-                L ${x2 - arrowHeadSize * Math.cos(angle - Math.PI/6)}% ${y2 - arrowHeadSize * Math.sin(angle - Math.PI/6)}%
-                M ${x2}% ${y2}%
-                L ${x2 - arrowHeadSize * Math.cos(angle + Math.PI/6)}% ${y2 - arrowHeadSize * Math.sin(angle + Math.PI/6)}%
+                M ${x2} ${y2}
+                L ${x2 - arrowHeadSize * Math.cos(angle - Math.PI/6)} ${y2 - arrowHeadSize * Math.sin(angle - Math.PI/6)}
+                M ${x2} ${y2}
+                L ${x2 - arrowHeadSize * Math.cos(angle + Math.PI/6)} ${y2 - arrowHeadSize * Math.sin(angle + Math.PI/6)}
               `}
               stroke={color}
               strokeWidth={strokeWidth}
