@@ -3,6 +3,7 @@ import { Send, Bot, User, Loader2, Sparkles, X, MessageCircle } from 'lucide-rea
 import Card from '../shared/Card'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
+import remarkGfm from 'remark-gfm'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 
@@ -107,46 +108,59 @@ export default function ChatBox({ problemContext, parameters, className = '' }) 
   }
 
   return (
-    <div className={`fixed bottom-6 right-6 w-96 z-50 ${className}`}>
-      <Card padding="none" className="shadow-2xl border-2 border-purple-200 overflow-hidden">
+    <div className={`fixed inset-0 md:inset-4 lg:inset-8 xl:left-auto xl:right-8 xl:w-[600px] 2xl:w-[750px] z-50 ${className}`}>
+      <Card padding="none" className="shadow-2xl border-2 border-purple-200 overflow-hidden h-full flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4">
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-                <Bot size={20} />
+                <Bot size={24} />
               </div>
               <div>
-                <h3 className="font-bold">Asistente IA</h3>
+                <h3 className="font-bold text-lg">Asistente IA</h3>
                 <p className="text-xs text-white text-opacity-80">
-                  Pregunta sobre el problema
+                  Pregunta sobre el problema actual
                 </p>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="hover:bg-white hover:bg-opacity-20 p-1 rounded transition-colors"
+              className="hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-colors"
             >
-              <X size={20} />
+              <X size={24} />
             </button>
           </div>
         </div>
 
         {/* Messages */}
-        <div className="h-96 overflow-y-auto p-4 bg-gray-50 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50 space-y-4">
           {messages.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <Bot size={48} className="mx-auto mb-3 text-purple-400" />
-              <p className="font-medium">¡Hola! Soy tu asistente de IA</p>
-              <p className="text-sm mt-2">
+            <div className="text-center py-12 md:py-16 text-gray-500">
+              <Bot size={64} className="mx-auto mb-4 text-purple-400" />
+              <p className="font-bold text-xl mb-2">¡Hola! Soy tu asistente de IA</p>
+              <p className="text-base mt-2 mb-6">
                 Puedo ayudarte a entender este problema de ecuaciones diferenciales.
               </p>
-              <div className="mt-4 text-xs text-left bg-white rounded-lg p-3 max-w-xs mx-auto">
-                <p className="font-semibold mb-2">Preguntas de ejemplo:</p>
-                <ul className="space-y-1 text-gray-600">
-                  <li>• ¿Qué significa esta ecuación?</li>
-                  <li>• ¿Cómo afectan los parámetros?</li>
-                  <li>• ¿Cuál es la aplicación práctica?</li>
+              <div className="mt-6 text-sm text-left bg-white rounded-lg p-5 max-w-md mx-auto border border-gray-200">
+                <p className="font-semibold mb-3 text-gray-700">Preguntas de ejemplo:</p>
+                <ul className="space-y-2 text-gray-600">
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-500 mt-1">•</span>
+                    <span>¿Qué significa esta ecuación?</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-500 mt-1">•</span>
+                    <span>¿Cómo afectan los parámetros al resultado?</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-500 mt-1">•</span>
+                    <span>¿Cuál es la aplicación práctica?</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-500 mt-1">•</span>
+                    <span>¿Por qué Euler tiene más error que RK4?</span>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -158,36 +172,66 @@ export default function ChatBox({ problemContext, parameters, className = '' }) 
               className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'assistant' && (
-                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                  <Bot size={18} className="text-white" />
+                <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                  <Bot size={20} className="text-white" />
                 </div>
               )}
 
               <div
-                className={`max-w-[75%] rounded-lg p-3 ${
+                className={`max-w-[85%] md:max-w-[80%] rounded-lg p-4 ${
                   msg.role === 'user'
                     ? 'bg-blue-600 text-white'
-                    : 'bg-white border border-gray-200 text-gray-900'
+                    : 'bg-white border border-gray-200 text-gray-900 shadow-sm'
                 }`}
               >
-                <div className="text-sm prose prose-sm max-w-none">
+                <div className="prose prose-sm md:prose-base max-w-none">
                   <ReactMarkdown
-                    remarkPlugins={[remarkMath]}
+                    remarkPlugins={[remarkMath, remarkGfm]}
                     rehypePlugins={[rehypeKatex]}
                     components={{
-                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                      ul: ({ children }) => <ul className="list-disc ml-4 mb-2">{children}</ul>,
-                      ol: ({ children }) => <ol className="list-decimal ml-4 mb-2">{children}</ol>,
-                      li: ({ children }) => <li className="mb-1">{children}</li>,
+                      p: ({ children }) => <p className={`mb-3 last:mb-0 leading-relaxed ${msg.role === 'user' ? 'text-white' : 'text-gray-800'}`}>{children}</p>,
+                      ul: ({ children }) => <ul className="list-disc ml-5 mb-3 space-y-1">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal ml-5 mb-3 space-y-1">{children}</ol>,
+                      li: ({ children }) => <li className="mb-1 leading-relaxed">{children}</li>,
+                      h1: ({ children }) => <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>,
+                      h2: ({ children }) => <h2 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
+                      h3: ({ children }) => <h3 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h3>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      em: ({ children }) => <em className="italic">{children}</em>,
+                      blockquote: ({ children }) => (
+                        <blockquote className={`border-l-4 pl-4 py-2 my-3 italic ${msg.role === 'user' ? 'border-blue-400' : 'border-purple-400 bg-purple-50'}`}>
+                          {children}
+                        </blockquote>
+                      ),
+                      table: ({ children }) => (
+                        <div className="overflow-x-auto my-4">
+                          <table className="min-w-full divide-y divide-gray-300 border border-gray-300">
+                            {children}
+                          </table>
+                        </div>
+                      ),
+                      thead: ({ children }) => <thead className="bg-gray-100">{children}</thead>,
+                      tbody: ({ children }) => <tbody className="divide-y divide-gray-200 bg-white">{children}</tbody>,
+                      tr: ({ children }) => <tr>{children}</tr>,
+                      th: ({ children }) => (
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider border border-gray-300">
+                          {children}
+                        </th>
+                      ),
+                      td: ({ children }) => (
+                        <td className="px-4 py-2 text-sm text-gray-700 border border-gray-300">
+                          {children}
+                        </td>
+                      ),
                       code: ({ inline, children }) =>
                         inline ? (
-                          <code className={`${msg.role === 'user' ? 'bg-blue-700' : 'bg-gray-100'} px-1 rounded text-xs`}>
+                          <code className={`${msg.role === 'user' ? 'bg-blue-700 text-blue-50' : 'bg-gray-100 text-gray-800'} px-1.5 py-0.5 rounded text-sm font-mono`}>
                             {children}
                           </code>
                         ) : (
-                          <code className="block bg-gray-100 p-2 rounded text-xs overflow-x-auto">
-                            {children}
-                          </code>
+                          <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto my-3">
+                            <code className="font-mono">{children}</code>
+                          </pre>
                         ),
                     }}
                   >
@@ -197,8 +241,8 @@ export default function ChatBox({ problemContext, parameters, className = '' }) 
               </div>
 
               {msg.role === 'user' && (
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <User size={18} className="text-white" />
+                <div className="flex-shrink-0 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                  <User size={20} className="text-white" />
                 </div>
               )}
             </div>
@@ -206,18 +250,21 @@ export default function ChatBox({ problemContext, parameters, className = '' }) 
 
           {isLoading && (
             <div className="flex gap-3 justify-start">
-              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                <Bot size={18} className="text-white" />
+              <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                <Bot size={20} className="text-white" />
               </div>
-              <div className="bg-white border border-gray-200 rounded-lg p-3">
-                <Loader2 size={20} className="animate-spin text-purple-600" />
+              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <Loader2 size={20} className="animate-spin text-purple-600" />
+                  <span className="text-sm text-gray-600">La IA está pensando...</span>
+                </div>
               </div>
             </div>
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">
-              <p className="font-semibold">Error:</p>
+            <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 text-sm text-red-800">
+              <p className="font-semibold mb-1">Error:</p>
               <p>{error}</p>
             </div>
           )}
@@ -226,35 +273,40 @@ export default function ChatBox({ problemContext, parameters, className = '' }) 
         </div>
 
         {/* Input */}
-        <div className="p-4 bg-white border-t border-gray-200">
+        <div className="p-4 md:p-6 bg-white border-t border-gray-200 flex-shrink-0">
           <div className="flex gap-2">
-            <input
+            <textarea
               ref={inputRef}
-              type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Escribe tu pregunta..."
+              placeholder="Escribe tu pregunta aquí... (Enter para enviar, Shift+Enter para nueva línea)"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              rows={2}
+              className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm resize-none"
             />
             <button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isLoading}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 self-end"
             >
-              {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+              {isLoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
             </button>
           </div>
 
-          {messages.length > 0 && (
-            <button
-              onClick={clearChat}
-              className="text-xs text-gray-500 hover:text-gray-700 mt-2 transition-colors"
-            >
-              Limpiar conversación
-            </button>
-          )}
+          <div className="flex items-center justify-between mt-3">
+            {messages.length > 0 && (
+              <button
+                onClick={clearChat}
+                className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                🗑️ Limpiar conversación
+              </button>
+            )}
+            <div className="text-xs text-gray-400 ml-auto">
+              Powered by OpenRouter AI
+            </div>
+          </div>
         </div>
       </Card>
     </div>

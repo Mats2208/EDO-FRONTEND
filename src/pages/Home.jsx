@@ -1,57 +1,135 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, BookOpen, FlaskConical, Target, Calculator, TrendingUp, GitCompare, Lightbulb, Zap } from 'lucide-react'
-// import banner from '../assets/EDOLab-banner.png'
+import { ArrowRight, BookOpen, FlaskConical, Target, Calculator, TrendingUp, GitCompare, Lightbulb, Zap, Sparkles } from 'lucide-react'
 import logo from '../assets/EDOLab-Logo.png'
 import CTA from '../assets/EDOLab-CTA.png'
 
 export default function Home() {
   return (
     <div className="bg-white">
-      {/* Hero Section Compacto con Banner */}
+      {/* Hero Section Mejorado */}
       <section className="relative bg-gradient-to-br from-primary-lighter via-white to-neutral-50 border-b-4 border-primary overflow-hidden">
-        {/* Background Pattern */}
+        {/* Background Pattern Sutil */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-20 left-10 w-64 h-64 bg-primary rounded-full blur-3xl"></div>
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-academic rounded-full blur-3xl"></div>
         </div>
 
-        <div className="container mx-auto px-4 py-12 relative z-10">
+        <div className="container mx-auto px-4 py-16 relative z-10">
           <div className="max-w-6xl mx-auto">
             {/* Header con Logo */}
-            <div className="flex items-center justify-center mb-8 animate-fadeIn">
-              <img src={logo} alt="EDOLab Logo" className="h-20 md:h-28 object-contain" />
+            <div className="flex items-center justify-center mb-10 animate-fadeIn">
+              <img src={logo} alt="EDOLab Logo" className="h-24 md:h-32 object-contain" />
             </div>
 
             {/* Badge */}
-            <div className="text-center mb-4 animate-fadeIn" style={{animationDelay: '0.1s'}}>
-              <span className="inline-block px-4 py-1 bg-academic text-white text-sm font-semibold">
+            <div className="text-center mb-6 animate-fadeIn" style={{animationDelay: '0.1s'}}>
+              <span className="inline-block px-6 py-2 bg-academic text-white text-sm font-bold uppercase tracking-wide shadow-ms">
                 CÁLCULO III - UPSA 2025
               </span>
             </div>
 
             {/* Título Principal */}
-            <h1 className="text-3xl md:text-5xl font-bold mb-4 text-neutral-800 text-center animate-fadeIn" style={{animationDelay: '0.2s'}}>
-              Análisis Comparativo: Euler vs Runge-Kutta RK4
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-neutral-800 text-center animate-fadeIn leading-tight" style={{animationDelay: '0.2s'}}>
+              Análisis Comparativo:<br />
+              <span className="text-primary">Euler vs Runge-Kutta RK4</span>
             </h1>
 
             {/* Descripción */}
-            <p className="text-lg md:text-xl text-neutral-700 mb-8 max-w-3xl mx-auto text-center leading-relaxed animate-fadeIn" style={{animationDelay: '0.3s'}}>
-              Plataforma interactiva para visualizar, analizar y comprender métodos numéricos en la resolución de Ecuaciones Diferenciales Ordinarias
+            <p className="text-xl md:text-2xl text-neutral-700 mb-10 max-w-4xl mx-auto text-center leading-relaxed animate-fadeIn" style={{animationDelay: '0.3s'}}>
+              Plataforma interactiva con <strong className="text-primary">inteligencia artificial</strong> para visualizar, 
+              analizar y comprender métodos numéricos en la resolución de Ecuaciones Diferenciales Ordinarias
             </p>
 
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12 animate-fadeIn" style={{animationDelay: '0.4s'}}>
+              <Link
+                to="/laboratory"
+                className="inline-flex items-center justify-center gap-3 px-10 py-5 bg-success text-white hover:bg-success-light transition-all text-xl font-bold shadow-ms-lg hover:shadow-ms-xl transform hover:scale-105"
+              >
+                <FlaskConical size={28} />
+                Ir al Laboratorio
+                <ArrowRight size={24} />
+              </Link>
+              <Link
+                to="/theory"
+                className="inline-flex items-center justify-center gap-3 px-10 py-5 bg-white border-4 border-primary text-primary hover:bg-primary hover:text-white transition-all text-xl font-bold shadow-ms hover:shadow-ms-lg transform hover:scale-105"
+              >
+                <BookOpen size={28} />
+                Explorar Teoría
+              </Link>
+            </div>
+
             {/* Banner */}
-            <div className="mb-8 animate-fadeIn" style={{animationDelay: '0.4s'}}>
-              <img src={CTA} alt="EDOLab CTA" className="w-full max-w-4xl mx-auto rounded-lg shadow-ms-lg border-2 border-neutral-200" />
+            <div className="mb-10 animate-fadeIn" style={{animationDelay: '0.5s'}}>
+              <img src={CTA} alt="EDOLab Platform Preview" className="w-full max-w-5xl mx-auto shadow-ms-xl border-4 border-neutral-200" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* HUB Central - Secciones Principales */}
+      {/* Solver IA Destacado */}
+      <section className="py-12 bg-gradient-to-r from-purple-600 via-primary to-primary-dark border-y-4 border-purple-700">
+        <div className="container mx-auto px-4">
+          <Link
+            to="/solver-ia"
+            className="block max-w-6xl mx-auto bg-white shadow-ms-xl hover:shadow-ms-2xl transition-all transform hover:scale-[1.02] border-4 border-purple-200 group"
+          >
+            <div className="flex flex-col lg:flex-row items-center gap-8 p-10">
+              {/* Icono */}
+              <div className="flex-shrink-0">
+                <div className="bg-gradient-to-br from-purple-500 to-primary p-8 border-4 border-purple-700 shadow-ms-lg">
+                  <Sparkles size={64} className="text-white" />
+                </div>
+              </div>
+
+              {/* Contenido */}
+              <div className="flex-1 text-center lg:text-left">
+                <div className="inline-block bg-warning text-white px-4 py-2 text-sm font-bold uppercase mb-4 shadow-ms">
+                  🔥 NUEVO - Powered by AI
+                </div>
+
+                <h3 className="text-3xl md:text-4xl font-bold text-neutral-800 mb-4">
+                  Solver con Inteligencia Artificial
+                </h3>
+
+                <p className="text-lg text-neutral-700 mb-6 leading-relaxed">
+                  Describe tu problema en lenguaje natural y deja que la <strong className="text-primary">IA identifique la ecuación diferencial</strong>, 
+                  determine los parámetros óptimos y resuelva automáticamente usando Euler y RK4.
+                </p>
+
+                <div className="grid sm:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-purple-100 border-l-4 border-purple-600 p-4">
+                    <div className="font-bold text-purple-800 mb-1">✨ Análisis Inteligente</div>
+                    <p className="text-sm text-purple-700">GPT-4 interpreta problemas</p>
+                  </div>
+                  <div className="bg-primary-lighter border-l-4 border-primary p-4">
+                    <div className="font-bold text-primary-dark mb-1">🎯 Auto-Detecta</div>
+                    <p className="text-sm text-primary-dark">Parámetros automáticos</p>
+                  </div>
+                  <div className="bg-success-lighter border-l-4 border-success p-4">
+                    <div className="font-bold text-success-dark mb-1">📊 Simulación</div>
+                    <p className="text-sm text-success-dark">Resultados instantáneos</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <div className="flex-shrink-0">
+                <div className="bg-gradient-to-r from-purple-600 to-primary text-white px-8 py-5 font-bold text-lg shadow-ms-lg group-hover:shadow-ms-xl transition-all flex items-center gap-3">
+                  Probar Ahora
+                  <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </section>
+
+      {/* Secciones Principales */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            {/* Header del Hub */}
+            {/* Header */}
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-neutral-800 mb-4">
                 Explora la Plataforma
@@ -61,8 +139,8 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Grid de Secciones Principales */}
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
+            {/* Grid de 3 Cards */}
+            <div className="grid md:grid-cols-3 gap-6">
               {/* Teoría */}
               <Link
                 to="/theory"
@@ -106,7 +184,6 @@ export default function Home() {
                 to="/laboratory"
                 className="group bg-white border-4 border-success hover:border-success-light shadow-ms-lg hover:shadow-ms-xl transition-all p-8 transform hover:scale-105 relative"
               >
-                {/* Badge Recomendado */}
                 <div className="absolute -top-3 -right-3 bg-warning text-white px-3 py-1 text-xs font-bold uppercase shadow-ms">
                   Recomendado
                 </div>
@@ -182,32 +259,45 @@ export default function Home() {
                 </div>
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
 
-            {/* Estadísticas Rápidas */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-              <div className="bg-primary-lighter border-l-4 border-primary p-4 text-center">
-                <div className="text-3xl font-bold text-primary mb-1">4</div>
-                <div className="text-sm text-neutral-700">Temas teóricos</div>
+      {/* Estadísticas */}
+      <section className="py-16 bg-neutral-50 border-y-4 border-neutral-200">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold text-neutral-800 mb-4 text-center">
+              Plataforma Completa de EDOs
+            </h2>
+            <p className="text-lg text-neutral-600 max-w-3xl mx-auto text-center mb-12">
+              Todo lo que necesitas para dominar métodos numéricos en un solo lugar
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="bg-white border-4 border-primary p-6 text-center shadow-ms hover:shadow-ms-lg transition-all transform hover:scale-105">
+                <div className="text-5xl font-bold text-primary mb-2">4</div>
+                <div className="text-sm font-semibold text-neutral-700 uppercase">Temas Teóricos</div>
               </div>
-              <div className="bg-success-lighter border-l-4 border-success p-4 text-center">
-                <div className="text-3xl font-bold text-success mb-1">2</div>
-                <div className="text-sm text-neutral-700">Métodos numéricos</div>
+              <div className="bg-white border-4 border-success p-6 text-center shadow-ms hover:shadow-ms-lg transition-all transform hover:scale-105">
+                <div className="text-5xl font-bold text-success mb-2">2</div>
+                <div className="text-sm font-semibold text-neutral-700 uppercase">Métodos Numéricos</div>
               </div>
-              <div className="bg-warning-lighter border-l-4 border-warning p-4 text-center">
-                <div className="text-3xl font-bold text-warning mb-1">8</div>
-                <div className="text-sm text-neutral-700">Categorías</div>
+              <div className="bg-white border-4 border-warning p-6 text-center shadow-ms hover:shadow-ms-lg transition-all transform hover:scale-105">
+                <div className="text-5xl font-bold text-warning mb-2">8</div>
+                <div className="text-sm font-semibold text-neutral-700 uppercase">Categorías</div>
               </div>
-              <div className="bg-academic-lighter border-l-4 border-academic p-4 text-center">
-                <div className="text-3xl font-bold text-academic mb-1">25+</div>
-                <div className="text-sm text-neutral-700">Ejemplos</div>
+              <div className="bg-white border-4 border-academic p-6 text-center shadow-ms hover:shadow-ms-lg transition-all transform hover:scale-105">
+                <div className="text-5xl font-bold text-academic mb-2">25+</div>
+                <div className="text-sm font-semibold text-neutral-700 uppercase">Ejemplos Reales</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Sección Rápida de Características */}
-      <section className="py-16 bg-gradient-to-br from-neutral-50 to-primary-lighter border-t-2 border-neutral-200">
+      {/* Características */}
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-3xl font-bold text-neutral-800 mb-8 text-center">
@@ -260,39 +350,41 @@ export default function Home() {
       </section>
 
       {/* Call to Action Final */}
-      <section className="py-16 bg-gradient-to-br from-academic via-primary to-primary-dark border-t-4 border-academic">
+      <section className="py-20 bg-gradient-to-br from-academic via-primary to-primary-dark border-t-4 border-academic">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
-              Comienza Ahora
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Comienza Tu Aprendizaje Ahora
             </h2>
-            <p className="text-xl text-primary-lighter mb-8 max-w-2xl mx-auto">
-              Domina los métodos numéricos con herramientas interactivas y visuales
+            <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Domina los métodos numéricos con herramientas interactivas, visuales y potenciadas por IA
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12">
               <Link
                 to="/laboratory"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-primary hover:bg-primary-lighter transition-all text-lg font-semibold shadow-ms-lg hover:shadow-ms"
+                className="inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-primary hover:bg-primary-lighter transition-all text-xl font-bold shadow-ms-xl hover:shadow-ms-2xl transform hover:scale-105"
               >
-                <FlaskConical size={24} />
+                <FlaskConical size={28} />
                 Ir al Laboratorio
-                <ArrowRight size={20} />
+                <ArrowRight size={24} />
               </Link>
               <Link
                 to="/theory"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-transparent border-2 border-white text-white hover:bg-white hover:text-primary transition-all text-lg font-semibold"
+                className="inline-flex items-center justify-center gap-3 px-10 py-5 bg-transparent border-4 border-white text-white hover:bg-white hover:text-primary transition-all text-xl font-bold shadow-ms hover:shadow-ms-lg transform hover:scale-105"
               >
-                <BookOpen size={24} />
-                Ver Teoría
+                <BookOpen size={28} />
+                Explorar Teoría
               </Link>
             </div>
 
             {/* Info Proyecto */}
-            <div className="mt-12 bg-white/10 backdrop-blur-sm border border-white/20 p-6 max-w-2xl mx-auto">
-              <p className="text-primary-lighter text-sm leading-relaxed">
-                <strong className="text-white">Proyecto Académico - UPSA 2025</strong><br />
-                Plataforma desarrollada para el curso de Cálculo III. Combina rigor matemático con herramientas interactivas para facilitar la comprensión de métodos numéricos aplicados a EDOs.
+            <div className="bg-white/10 border-4 border-white/30 p-8 max-w-2xl mx-auto shadow-ms-lg">
+              <p className="text-white/90 text-base leading-relaxed">
+                <strong className="text-white text-xl block mb-3">Proyecto Académico - UPSA 2025</strong>
+                Plataforma desarrollada para Cálculo III que combina rigor matemático con herramientas 
+                interactivas modernas para facilitar la comprensión de métodos numéricos aplicados a 
+                Ecuaciones Diferenciales Ordinarias.
               </p>
             </div>
           </div>

@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { Home, BookOpen, FlaskConical, ListChecks, Info } from 'lucide-react'
+import { Home, BookOpen, FlaskConical, ListChecks, Info, Sparkles } from 'lucide-react'
 
 export default function Navbar() {
   const navItems = [
     { to: '/', label: 'Inicio', icon: Home },
     { to: '/theory', label: 'Teoría', icon: BookOpen },
     { to: '/laboratory', label: 'Laboratorio', icon: FlaskConical },
+    { to: '/solver-ia', label: 'Solver IA', icon: Sparkles, highlight: true },
     { to: '/problems', label: 'Problemas', icon: ListChecks },
     { to: '/about', label: 'Sobre', icon: Info },
   ]
@@ -30,8 +31,12 @@ export default function Navbar() {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `flex items-center gap-2 px-4 py-2 transition-all ${
-                      isActive
+                    `flex items-center gap-2 px-4 py-2 transition-all relative ${
+                      item.highlight
+                        ? isActive
+                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold border-b-4 border-purple-700'
+                          : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 animate-pulse'
+                        : isActive
                         ? 'bg-academic text-white font-semibold border-b-4 border-academic'
                         : 'text-neutral-700 hover:bg-primary-lighter hover:text-primary'
                     }`
@@ -39,6 +44,11 @@ export default function Navbar() {
                 >
                   <Icon size={18} />
                   <span>{item.label}</span>
+                  {item.highlight && !item.isActive && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
+                      NEW
+                    </span>
+                  )}
                 </NavLink>
               )
             })}

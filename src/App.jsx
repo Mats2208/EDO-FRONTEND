@@ -7,6 +7,7 @@ import Problems from './pages/Problems'
 import CategoryProblems from './pages/CategoryProblems'
 import ProblemDetail from './pages/ProblemDetail'
 import About from './pages/About'
+import SolverIA from './pages/SolverIA'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="theory" element={<Theory />} />
           <Route path="laboratory" element={<Laboratory />} />
+          <Route path="solver-ia" element={<SolverIA />} />
           <Route path="problems" element={<Problems />} />
           <Route path="problems/:categoryId" element={<CategoryProblems />} />
           <Route path="problems/:categoryId/:problemId" element={<ProblemDetail />} />
