@@ -154,7 +154,8 @@ ${problemDescription}
 
 Recuerda: Debes devolver el JSON en un bloque de código como se muestra arriba.`
 
-      const response = await fetch('http://localhost:8000/api/v1/chat', {
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000'
+      const response = await fetch(`${BACKEND_URL}/api/v1/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
